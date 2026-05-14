@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import pb.classroom.model.Administrador;
 import pb.classroom.model.Aluno;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.Usuario;
@@ -14,26 +15,28 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("AutenticacaoController — Testes de Login")
-class AutenticacaoControllerTest {
+class AutenticacaoControllerLoginTest {
 
     private static final String MATRICULA = "2024001";
     private static final String EMAIL = "aluno@classroompb.com";
     private static final String SENHA = "senha@123";
+    private static final String MATRICULA_ADMIN = "0001";
+    private static final String EMAIL_ADMIN = "admin@classroompb.com";
+    private static final String SENHA_ADMIN = "admin123";
 
     private Aluno alunoAtivo;
     private Aluno alunoInativo;
+    private Administrador administrador;
     private AutenticacaoController controller;
 
+    // Cria um conjunto fixo de usuarios para isolar cada teste.
     @BeforeEach
     void setUp() {
         alunoAtivo = new Aluno(MATRICULA, EMAIL, SENHA);
         alunoInativo = new Aluno("id-inativo", "2024002", "inativo@classroompb.com", SENHA, false);
-        controller = new AutenticacaoController(List.of(alunoAtivo, alunoInativo));
+        administrador = new Administrador(MATRICULA_ADMIN, EMAIL_ADMIN, SENHA_ADMIN);
+        controller = new AutenticacaoController(List.of(alunoAtivo, alunoInativo, administrador));
     }
-
-    // =========================================================================
-    // Cenários: Login com sucesso
-    // =========================================================================
 
     @Nested
     @DisplayName("Login com sucesso")
@@ -100,8 +103,6 @@ class AutenticacaoControllerTest {
         }
     }
 
-    // Cenário: Campos obrigatórios
-
     @Nested
     @DisplayName("Campos obrigatórios")
     class CamposObrigatorios {
@@ -159,8 +160,6 @@ class AutenticacaoControllerTest {
         }
     }
 
-    // Cenário: Credenciais inválidas
-
     @Nested
     @DisplayName("Credenciais inválidas")
     class CredenciaisInvalidas {
@@ -193,6 +192,7 @@ class AutenticacaoControllerTest {
         @Test
         @DisplayName("após falha de login o usuário não está autenticado")
         void aposFalhaDeLoginNaoEstaAutenticado() {
+            // A falha nao deve alterar o estado de autenticacao.
             try {
                 controller.login(MATRICULA, "senhaErrada");
             } catch (IllegalArgumentException ignored) {
@@ -201,8 +201,6 @@ class AutenticacaoControllerTest {
             assertFalse(controller.isAutenticado());
         }
     }
-
-    // Cenário: Usuário inativo
 
     @Nested
     @DisplayName("Usuário inativo")
@@ -220,6 +218,7 @@ class AutenticacaoControllerTest {
         @Test
         @DisplayName("usuário inativo não fica autenticado após tentativa")
         void usuarioInativoNaoFicaAutenticado() {
+            // Usuario bloqueado nao pode abrir sessao.
             try {
                 controller.login("2024002", SENHA);
             } catch (IllegalArgumentException ignored) {
@@ -228,8 +227,6 @@ class AutenticacaoControllerTest {
             assertFalse(controller.isAutenticado());
         }
     }
-
-    // Cenário: Logout e estado do controller
 
     @Nested
     @DisplayName("Logout e estado")
@@ -271,8 +268,6 @@ class AutenticacaoControllerTest {
             assertDoesNotThrow(() -> controller.logout());
         }
     }
-
-    // Cenário: Construtor
 
     @Nested
     @DisplayName("Construtor")
