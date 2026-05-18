@@ -53,7 +53,16 @@ public class UsuarioRepository {
 
     public void salvarUsuarios(List<Usuario> usuarios) {
         try {
-            Files.write(caminhoArquivo, converterUsuariosParaJson(usuarios).getBytes(StandardCharsets.UTF_8));
+            String conteudoAtual = "";
+            if (Files.exists(caminhoArquivo)) {
+                conteudoAtual = new String(Files.readAllBytes(caminhoArquivo), StandardCharsets.UTF_8);
+            }
+
+            String disciplinasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "disciplinas");
+            String documento = ArmazenamentoJson.montarDocumento(
+                    converterUsuariosParaJson(usuarios),
+                    disciplinasJson);
+            Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Não foi possível salvar os usuários.", e);
         }
@@ -91,8 +100,7 @@ public class UsuarioRepository {
 
     private String converterUsuariosParaJson(List<Usuario> usuarios) {
         StringBuilder json = new StringBuilder();
-        json.append("{\n");
-        json.append("  \"usuarios\": [\n");
+        json.append("[\n");
 
         for (int i = 0; i < usuarios.size(); i++) {
             Usuario usuario = usuarios.get(i);
@@ -111,8 +119,7 @@ public class UsuarioRepository {
             json.append("\n");
         }
 
-        json.append("  ]\n");
-        json.append("}\n");
+        json.append("  ]");
         return json.toString();
     }
 

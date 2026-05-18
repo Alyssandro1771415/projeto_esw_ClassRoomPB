@@ -15,6 +15,25 @@
       "email": "lucas@classroompb.com",
       "senha": "123456",
       "ativo": true
+    },
+    {
+      "id": "d26c7fce-ae20-4941-b984-077c5f9e3577",
+      "perfil": "COORDENADOR",
+      "matricula": "2026002",
+      "email": "coordenador@classroompb.com",
+      "senha": "123456",
+      "ativo": true
+    }
+  ],
+  "disciplinas": [
+    {
+      "id": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
+      "codigo": "01",
+      "nome": "Engenharia de Software II",
+      "cargaHoraria": 60,
+      "creditos": 5,
+      "idCurso": "0001",
+      "preRequisitosIds": []
     }
   ]
 }

@@ -1,32 +1,49 @@
 package pb.classroom.view;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import pb.classroom.controller.AutenticacaoController;
+import pb.classroom.controller.DisciplinaController;
+import pb.classroom.model.Disciplina;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.Usuario;
+import pb.classroom.repository.DisciplinaRepository;
 import pb.classroom.repository.UsuarioRepository;
 
 public class ClassRoomCLI {
 
     private final Scanner scanner;
     private final AutenticacaoController autenticacaoController;
+    private final DisciplinaController disciplinaController;
     private final UsuarioRepository usuarioRepository;
+    private final DisciplinaRepository disciplinaRepository;
 
     public ClassRoomCLI() {
-        this(new Scanner(System.in), new UsuarioRepository());
+        this(new Scanner(System.in), new UsuarioRepository(), new DisciplinaRepository());
     }
 
     ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
+        this(scanner, usuarioRepository, new DisciplinaRepository());
+    }
+
+    ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository, DisciplinaRepository disciplinaRepository) {
         this.scanner = scanner;
         this.usuarioRepository = usuarioRepository;
+        this.disciplinaRepository = disciplinaRepository;
         this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
+        this.disciplinaController = new DisciplinaController(
+                autenticacaoController,
+                disciplinaRepository.carregarDisciplinas());
     }
 
     public void iniciar() {
         boolean executando = true;
+        limparTerminal();
         while (executando) {
             exibirMenu();
             String opcao = lerLinha("Opção: ");
+            limparTerminal();
 
             switch (opcao) {
                 case "1":
@@ -41,6 +58,12 @@ public class ClassRoomCLI {
                 case "4":
                     cadastrarUsuario();
                     break;
+                case "5":
+                    cadastrarDisciplina();
+                    break;
+                case "6":
+                    listarDisciplinas();
+                    break;
                 case "0":
                     executando = false;
                     System.out.println("Sistema encerrado.");
@@ -48,6 +71,12 @@ public class ClassRoomCLI {
                 default:
                     System.out.println("Opção inválida.");
                     break;
+            }
+
+            if (executando) {
+                System.out.println();
+                lerLinha("Pressione Enter para continuar...");
+                limparTerminal();
             }
         }
     }
@@ -62,12 +91,16 @@ public class ClassRoomCLI {
             System.out.println("2 - Ver dados do usuário logado");
             System.out.println("3 - Logout");
             System.out.println("4 - Cadastrar usuário");
+            System.out.println("5 - Cadastrar disciplina");
+            System.out.println("6 - Listar disciplinas");
         } else {
             System.out.println("Sessão atual: nenhum usuário logado");
             System.out.println("1 - Login");
             System.out.println("2 - Ver dados do usuário logado");
             System.out.println("3 - Logout");
             System.out.println("4 - Cadastrar usuário");
+            System.out.println("5 - Cadastrar disciplina");
+            System.out.println("6 - Listar disciplinas");
         }
         System.out.println("0 - Sair");
         System.out.println();
@@ -138,6 +171,106 @@ public class ClassRoomCLI {
         }
     }
 
+    private void cadastrarDisciplina() {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.COORDENADOR) {
+            System.out.println("Apenas coordenadores podem cadastrar disciplinas.");
+            return;
+        }
+
+        exibirDisciplinasParaPreRequisito();
+        String codigo = lerLinha("Código da disciplina: ");
+        String nome = lerLinha("Nome: ");
+        String cargaHorariaTexto = lerLinha("Carga horária: ");
+        String creditosTexto = lerLinha("Créditos: ");
+        String idCurso = lerLinha("ID do curso: ");
+        String preRequisitosTexto = lerLinha("IDs dos pré-requisitos separados por vírgula (opcional): ");
+
+        try {
+            int cargaHoraria = Integer.parseInt(cargaHorariaTexto);
+            int creditos = Integer.parseInt(creditosTexto);
+            List<String> preRequisitosIds = converterTextoParaLista(preRequisitosTexto);
+
+            Disciplina disciplina = disciplinaController.cadastrarDisciplina(
+                    codigo,
+                    nome,
+                    cargaHoraria,
+                    creditos,
+                    idCurso,
+                    preRequisitosIds);
+            disciplinaRepository.salvarDisciplinas(disciplinaController.getDisciplinas());
+
+            System.out.println("Disciplina cadastrada com sucesso.");
+            System.out.println("ID: " + disciplina.getId());
+            System.out.println("Código: " + disciplina.getCodigo());
+            System.out.println("Nome: " + disciplina.getNome());
+            System.out.println("Carga horária: " + disciplina.getCargaHoraria());
+            System.out.println("Créditos: " + disciplina.getCreditos());
+        } catch (NumberFormatException e) {
+            System.out.println("Carga horária e créditos devem ser números inteiros.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void listarDisciplinas() {
+        List<Disciplina> disciplinas = disciplinaController.getDisciplinas();
+        if (disciplinas.isEmpty()) {
+            System.out.println("Nenhuma disciplina cadastrada.");
+            return;
+        }
+
+        System.out.println("Disciplinas cadastradas:");
+        for (Disciplina disciplina : disciplinas) {
+            System.out.println();
+            System.out.println("ID: " + disciplina.getId());
+            System.out.println("Código: " + disciplina.getCodigo());
+            System.out.println("Nome: " + disciplina.getNome());
+            System.out.println("Carga horária: " + disciplina.getCargaHoraria());
+            System.out.println("Créditos: " + disciplina.getCreditos());
+            System.out.println("ID do curso: " + disciplina.getIdCurso());
+            System.out.println("Pré-requisitos: " + formatarPreRequisitos(disciplina.getPreRequisitosIds()));
+        }
+    }
+
+    private void exibirDisciplinasParaPreRequisito() {
+        List<Disciplina> disciplinas = disciplinaController.getDisciplinas();
+        if (disciplinas.isEmpty()) {
+            System.out.println("Nenhuma disciplina cadastrada para usar como pré-requisito.");
+            System.out.println();
+            return;
+        }
+
+        System.out.println("Disciplinas disponíveis para pré-requisito:");
+        for (Disciplina disciplina : disciplinas) {
+            System.out.println(disciplina.getId() + " - " + disciplina.getCodigo() + " - " + disciplina.getNome());
+        }
+        System.out.println();
+    }
+
+    private List<String> converterTextoParaLista(String texto) {
+        List<String> valores = new ArrayList<>();
+        if (texto == null || texto.trim().isEmpty()) {
+            return valores;
+        }
+
+        String[] partes = texto.split(",");
+        for (String parte : partes) {
+            String valor = parte.trim();
+            if (!valor.isEmpty()) {
+                valores.add(valor);
+            }
+        }
+        return valores;
+    }
+
+    private String formatarPreRequisitos(List<String> preRequisitosIds) {
+        if (preRequisitosIds.isEmpty()) {
+            return "nenhum";
+        }
+        return String.join(", ", preRequisitosIds);
+    }
+
     private PerfilUsuario lerPerfil() {
         System.out.println("Tipo de usuário:");
         System.out.println("1 - Aluno");
@@ -163,5 +296,10 @@ public class ClassRoomCLI {
     private String lerLinha(String mensagem) {
         System.out.print(mensagem);
         return scanner.nextLine().trim();
+    }
+
+    private void limparTerminal() {
+        System.out.print("\033[H\033[2J");
+        System.out.flush();
     }
 }
