@@ -35,5 +35,7 @@
       "idCurso": "0001",
       "preRequisitosIds": []
     }
-  ]
+  ],
+  "cursos": [],
+  "periodosLetivos": []
 }

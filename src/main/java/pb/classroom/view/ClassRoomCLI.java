@@ -3,38 +3,67 @@ package pb.classroom.view;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
 import pb.classroom.controller.AutenticacaoController;
+import pb.classroom.controller.CursoController;
 import pb.classroom.controller.DisciplinaController;
+import pb.classroom.controller.PeriodoLetivoController;
+import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
 import pb.classroom.model.PerfilUsuario;
+import pb.classroom.model.PeriodoLetivo;
 import pb.classroom.model.Usuario;
+import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
+import pb.classroom.repository.PeriodoLetivoRepository;
 import pb.classroom.repository.UsuarioRepository;
 
 public class ClassRoomCLI {
 
     private final Scanner scanner;
     private final AutenticacaoController autenticacaoController;
+    private final CursoController cursoController;
     private final DisciplinaController disciplinaController;
+    private final PeriodoLetivoController periodoLetivoController;
     private final UsuarioRepository usuarioRepository;
+    private final CursoRepository cursoRepository;
     private final DisciplinaRepository disciplinaRepository;
+    private final PeriodoLetivoRepository periodoLetivoRepository;
 
     public ClassRoomCLI() {
-        this(new Scanner(System.in), new UsuarioRepository(), new DisciplinaRepository());
+        this(
+                new Scanner(System.in),
+                new UsuarioRepository(),
+                new DisciplinaRepository(),
+                new CursoRepository(),
+                new PeriodoLetivoRepository());
     }
 
     ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
-        this(scanner, usuarioRepository, new DisciplinaRepository());
+        this(scanner, usuarioRepository, new DisciplinaRepository(), new CursoRepository(), new PeriodoLetivoRepository());
     }
 
-    ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository, DisciplinaRepository disciplinaRepository) {
+    ClassRoomCLI(
+            Scanner scanner,
+            UsuarioRepository usuarioRepository,
+            DisciplinaRepository disciplinaRepository,
+            CursoRepository cursoRepository,
+            PeriodoLetivoRepository periodoLetivoRepository) {
         this.scanner = scanner;
         this.usuarioRepository = usuarioRepository;
         this.disciplinaRepository = disciplinaRepository;
+        this.cursoRepository = cursoRepository;
+        this.periodoLetivoRepository = periodoLetivoRepository;
         this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
+        this.cursoController = new CursoController(
+                autenticacaoController,
+                cursoRepository.carregarCursos());
         this.disciplinaController = new DisciplinaController(
                 autenticacaoController,
                 disciplinaRepository.carregarDisciplinas());
+        this.periodoLetivoController = new PeriodoLetivoController(
+                autenticacaoController,
+                periodoLetivoRepository.carregarPeriodosLetivos());
     }
 
     public void iniciar() {
@@ -64,6 +93,24 @@ public class ClassRoomCLI {
                 case "6":
                     listarDisciplinas();
                     break;
+                case "7":
+                    cadastrarCurso();
+                    break;
+                case "8":
+                    listarCursos();
+                    break;
+                case "9":
+                    cadastrarPeriodoLetivo();
+                    break;
+                case "10":
+                    listarPeriodosLetivos();
+                    break;
+                case "11":
+                    ativarPeriodoLetivo();
+                    break;
+                case "12":
+                    encerrarPeriodoLetivo();
+                    break;
                 case "0":
                     executando = false;
                     System.out.println("Sistema encerrado.");
@@ -90,20 +137,42 @@ public class ClassRoomCLI {
             System.out.println("1 - Trocar login");
             System.out.println("2 - Ver dados do usuário logado");
             System.out.println("3 - Logout");
-            System.out.println("4 - Cadastrar usuário");
-            System.out.println("5 - Cadastrar disciplina");
-            System.out.println("6 - Listar disciplinas");
+            exibirFuncionalidadesPorPerfil(usuario.getPerfil());
         } else {
             System.out.println("Sessão atual: nenhum usuário logado");
             System.out.println("1 - Login");
-            System.out.println("2 - Ver dados do usuário logado");
-            System.out.println("3 - Logout");
-            System.out.println("4 - Cadastrar usuário");
-            System.out.println("5 - Cadastrar disciplina");
-            System.out.println("6 - Listar disciplinas");
         }
         System.out.println("0 - Sair");
         System.out.println();
+    }
+
+    private void exibirFuncionalidadesPorPerfil(PerfilUsuario perfil) {
+        switch (perfil) {
+            case ADMINISTRADOR:
+                System.out.println("4 - Cadastrar usuário");
+                System.out.println("7 - Cadastrar curso");
+                System.out.println("8 - Listar cursos");
+                break;
+            case COORDENADOR:
+                System.out.println("5 - Cadastrar disciplina");
+                System.out.println("6 - Listar disciplinas");
+                System.out.println("8 - Listar cursos");
+                System.out.println("9 - Cadastrar período letivo");
+                System.out.println("10 - Listar períodos letivos");
+                System.out.println("11 - Ativar período letivo");
+                System.out.println("12 - Encerrar período letivo");
+                break;
+            case PROFESSOR:
+                System.out.println("6 - Listar disciplinas");
+                System.out.println("10 - Listar períodos letivos");
+                break;
+            case ALUNO:
+                System.out.println("6 - Listar disciplinas");
+                System.out.println("10 - Listar períodos letivos");
+                break;
+            default:
+                break;
+        }
     }
 
     private void realizarLogin() {
@@ -233,6 +302,115 @@ public class ClassRoomCLI {
         }
     }
 
+    private void cadastrarCurso() {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.ADMINISTRADOR) {
+            System.out.println("Apenas administradores podem cadastrar cursos.");
+            return;
+        }
+
+        String nome = lerLinha("Nome do curso: ");
+        String codigo = lerLinha("Código do curso (opcional): ");
+
+        try {
+            Curso curso = cursoController.cadastrarCurso(nome, codigo);
+            cursoRepository.salvarCursos(cursoController.getCursos());
+
+            System.out.println("Curso cadastrado com sucesso.");
+            System.out.println("ID: " + curso.getId());
+            System.out.println("Nome: " + curso.getNome());
+            System.out.println("Código: " + formatarValorOpcional(curso.getCodigo()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void listarCursos() {
+        List<Curso> cursos = cursoController.getCursos();
+        if (cursos.isEmpty()) {
+            System.out.println("Nenhum curso cadastrado.");
+            return;
+        }
+
+        System.out.println("Cursos cadastrados:");
+        for (Curso curso : cursos) {
+            System.out.println();
+            System.out.println("ID: " + curso.getId());
+            System.out.println("Nome: " + curso.getNome());
+            System.out.println("Código: " + formatarValorOpcional(curso.getCodigo()));
+        }
+    }
+
+    private void cadastrarPeriodoLetivo() {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.COORDENADOR) {
+            System.out.println("Apenas coordenadores podem gerenciar períodos letivos.");
+            return;
+        }
+
+        String codigo = lerLinha("Período letivo (ex.: 2026.2): ");
+
+        try {
+            PeriodoLetivo periodoLetivo = periodoLetivoController.cadastrarPeriodoLetivo(codigo);
+            periodoLetivoRepository.salvarPeriodosLetivos(periodoLetivoController.getPeriodosLetivos());
+
+            System.out.println("Período letivo cadastrado com sucesso.");
+            System.out.println("ID: " + periodoLetivo.getId());
+            System.out.println("Código: " + periodoLetivo.getCodigo());
+            System.out.println("Status: " + formatarStatusPeriodo(periodoLetivo));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void listarPeriodosLetivos() {
+        List<PeriodoLetivo> periodosLetivos = periodoLetivoController.getPeriodosLetivos();
+        if (periodosLetivos.isEmpty()) {
+            System.out.println("Nenhum período letivo cadastrado.");
+            return;
+        }
+
+        System.out.println("Períodos letivos cadastrados:");
+        for (PeriodoLetivo periodoLetivo : periodosLetivos) {
+            System.out.println();
+            System.out.println("ID: " + periodoLetivo.getId());
+            System.out.println("Código: " + periodoLetivo.getCodigo());
+            System.out.println("Status: " + formatarStatusPeriodo(periodoLetivo));
+        }
+    }
+
+    private void ativarPeriodoLetivo() {
+        alterarStatusPeriodoLetivo(true);
+    }
+
+    private void encerrarPeriodoLetivo() {
+        alterarStatusPeriodoLetivo(false);
+    }
+
+    private void alterarStatusPeriodoLetivo(boolean ativar) {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.COORDENADOR) {
+            System.out.println("Apenas coordenadores podem gerenciar períodos letivos.");
+            return;
+        }
+
+        listarPeriodosLetivos();
+        String id = lerLinha("ID do período letivo: ");
+
+        try {
+            PeriodoLetivo periodoLetivo = ativar
+                    ? periodoLetivoController.ativarPeriodoLetivo(id)
+                    : periodoLetivoController.encerrarPeriodoLetivo(id);
+            periodoLetivoRepository.salvarPeriodosLetivos(periodoLetivoController.getPeriodosLetivos());
+
+            System.out.println("Período letivo atualizado com sucesso.");
+            System.out.println("Código: " + periodoLetivo.getCodigo());
+            System.out.println("Status: " + formatarStatusPeriodo(periodoLetivo));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     private void exibirDisciplinasParaPreRequisito() {
         List<Disciplina> disciplinas = disciplinaController.getDisciplinas();
         if (disciplinas.isEmpty()) {
@@ -269,6 +447,17 @@ public class ClassRoomCLI {
             return "nenhum";
         }
         return String.join(", ", preRequisitosIds);
+    }
+
+    private String formatarValorOpcional(String valor) {
+        if (valor == null || valor.trim().isEmpty()) {
+            return "não informado";
+        }
+        return valor;
+    }
+
+    private String formatarStatusPeriodo(PeriodoLetivo periodoLetivo) {
+        return periodoLetivo.isAtivo() ? "ativo" : "encerrado";
     }
 
     private PerfilUsuario lerPerfil() {
