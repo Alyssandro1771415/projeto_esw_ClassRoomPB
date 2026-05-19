@@ -29,7 +29,7 @@ public class DisciplinaController {
         }
         this.autenticacaoController = autenticacaoController;
         this.disciplinas = new ArrayList<>(disciplinas);
-        this.cursos = new ArrayList<>(cursos);
+        this.cursos = cursos;
     }
 
     public Disciplina cadastrarDisciplina(

@@ -8,6 +8,7 @@ import pb.classroom.model.Disciplina;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.Usuario;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,5 +82,25 @@ class DisciplinaControllerTest {
                         4,
                         curso.getId(),
                         List.of()));
+    }
+
+    @Test
+    @DisplayName("reconhece curso adicionado apos criar controller")
+    void reconheceCursoAdicionadoAposCriarController() {
+        List<Curso> cursos = new ArrayList<>();
+        disciplinaController = new DisciplinaController(autenticacaoController, List.of(), cursos);
+        Curso novoCurso = new Curso("curso-2", "Ciencia da Computacao", "CC");
+        cursos.add(novoCurso);
+        autenticacaoController.login("C001", SENHA);
+
+        Disciplina disciplina = disciplinaController.cadastrarDisciplina(
+                "CC101",
+                "Algoritmos",
+                60,
+                4,
+                novoCurso.getId(),
+                List.of());
+
+        assertEquals(novoCurso.getId(), disciplina.getIdCurso());
     }
 }
