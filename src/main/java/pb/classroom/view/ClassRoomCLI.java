@@ -60,7 +60,8 @@ public class ClassRoomCLI {
                 cursoRepository.carregarCursos());
         this.disciplinaController = new DisciplinaController(
                 autenticacaoController,
-                disciplinaRepository.carregarDisciplinas());
+                disciplinaRepository.carregarDisciplinas(),
+                cursoController.getCursos());
         this.periodoLetivoController = new PeriodoLetivoController(
                 autenticacaoController,
                 periodoLetivoRepository.carregarPeriodosLetivos());
@@ -111,6 +112,9 @@ public class ClassRoomCLI {
                 case "12":
                     encerrarPeriodoLetivo();
                     break;
+                case "13":
+                    listarUsuarios();
+                    break;
                 case "0":
                     executando = false;
                     System.out.println("Sistema encerrado.");
@@ -152,6 +156,7 @@ public class ClassRoomCLI {
                 System.out.println("4 - Cadastrar usuário");
                 System.out.println("7 - Cadastrar curso");
                 System.out.println("8 - Listar cursos");
+                System.out.println("13 - Listar usuários");
                 break;
             case COORDENADOR:
                 System.out.println("5 - Cadastrar disciplina");
@@ -197,6 +202,7 @@ public class ClassRoomCLI {
         Usuario usuario = autenticacaoController.getUsuarioLogado();
         System.out.println("Usuário logado:");
         System.out.println("Matrícula: " + usuario.getMatricula());
+        System.out.println("Nome: " + usuario.getNome());
         System.out.println("E-mail: " + usuario.getEmail());
         System.out.println("Perfil: " + usuario.getPerfil());
     }
@@ -225,13 +231,14 @@ public class ClassRoomCLI {
         }
 
         String matricula = lerLinha("Matrícula: ");
-        String email = lerLinha("E-mail: ");
+        String nome = lerLinha("Nome completo: ");
         String senha = lerLinha("Senha: ");
 
         try {
-            Usuario usuario = autenticacaoController.cadastrarUsuario(perfil, matricula, email, senha);
+            Usuario usuario = autenticacaoController.cadastrarUsuario(perfil, matricula, nome, senha);
             usuarioRepository.salvarUsuarios(autenticacaoController.getUsuarios());
             System.out.println("Usuário cadastrado com sucesso.");
+            System.out.println("Nome: " + usuario.getNome());
             System.out.println("Perfil: " + usuario.getPerfil());
             System.out.println("Matrícula: " + usuario.getMatricula());
             System.out.println("E-mail: " + usuario.getEmail());
@@ -247,6 +254,7 @@ public class ClassRoomCLI {
             return;
         }
 
+        exibirCursosParaDisciplina();
         exibirDisciplinasParaPreRequisito();
         String codigo = lerLinha("Código da disciplina: ");
         String nome = lerLinha("Nome: ");
@@ -275,6 +283,7 @@ public class ClassRoomCLI {
             System.out.println("Nome: " + disciplina.getNome());
             System.out.println("Carga horária: " + disciplina.getCargaHoraria());
             System.out.println("Créditos: " + disciplina.getCreditos());
+            System.out.println("ID do curso: " + disciplina.getIdCurso());
         } catch (NumberFormatException e) {
             System.out.println("Carga horária e créditos devem ser números inteiros.");
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -299,6 +308,30 @@ public class ClassRoomCLI {
             System.out.println("Créditos: " + disciplina.getCreditos());
             System.out.println("ID do curso: " + disciplina.getIdCurso());
             System.out.println("Pré-requisitos: " + formatarPreRequisitos(disciplina.getPreRequisitosIds()));
+        }
+    }
+
+    private void listarUsuarios() {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.ADMINISTRADOR) {
+            System.out.println("Apenas administradores podem listar usuários.");
+            return;
+        }
+
+        List<Usuario> usuarios = autenticacaoController.getUsuarios();
+        if (usuarios.isEmpty()) {
+            System.out.println("Nenhum usuário cadastrado.");
+            return;
+        }
+
+        System.out.println("Usuários cadastrados:");
+        for (Usuario usuario : usuarios) {
+            System.out.println();
+            System.out.println("Nome: " + usuario.getNome());
+            System.out.println("Matrícula: " + usuario.getMatricula());
+            System.out.println("E-mail: " + usuario.getEmail());
+            System.out.println("Perfil: " + usuario.getPerfil());
+            System.out.println("Status: " + (usuario.isAtivo() ? "ativo" : "inativo"));
         }
     }
 
@@ -422,6 +455,21 @@ public class ClassRoomCLI {
         System.out.println("Disciplinas disponíveis para pré-requisito:");
         for (Disciplina disciplina : disciplinas) {
             System.out.println(disciplina.getId() + " - " + disciplina.getCodigo() + " - " + disciplina.getNome());
+        }
+        System.out.println();
+    }
+
+    private void exibirCursosParaDisciplina() {
+        List<Curso> cursos = cursoController.getCursos();
+        if (cursos.isEmpty()) {
+            System.out.println("Nenhum curso cadastrado. Cadastre um curso antes de criar disciplinas.");
+            System.out.println();
+            return;
+        }
+
+        System.out.println("Cursos disponíveis para vincular a disciplina:");
+        for (Curso curso : cursos) {
+            System.out.println(curso.getId() + " - " + curso.getNome() + " - " + formatarValorOpcional(curso.getCodigo()));
         }
         System.out.println();
     }

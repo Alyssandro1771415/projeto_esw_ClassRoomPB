@@ -1,18 +1,17 @@
 package pb.classroom.controller;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import pb.classroom.model.Administrador;
-import pb.classroom.model.Aluno;
-import pb.classroom.model.Coordenador;
+import java.util.Locale;
+
 import pb.classroom.model.PerfilUsuario;
-import pb.classroom.model.Professor;
 import pb.classroom.model.Usuario;
 
 public class AutenticacaoController {
 
-    private static final String CREDENCIAIS_INVALIDAS = "Matrícula/e-mail ou senha inválidos.";
+    private static final String CREDENCIAIS_INVALIDAS = "Matricula/e-mail ou senha invalidos.";
 
     private final List<Usuario> usuarios;
     private Usuario usuarioLogado;
@@ -41,22 +40,23 @@ public class AutenticacaoController {
         return usuarioLogado;
     }
 
-    public Usuario cadastrarUsuario(PerfilUsuario perfil, String matricula, String email, String senha) {
+    public Usuario cadastrarUsuario(PerfilUsuario perfil, String matricula, String nome, String senha) {
         if (!isAutenticado() || usuarioLogado.getPerfil() != PerfilUsuario.ADMINISTRADOR) {
             throw new IllegalArgumentException("Apenas administradores podem cadastrar usuários.");
         }
 
         validarCampoObrigatorio(matricula, "matrícula");
-        validarCampoObrigatorio(email, "e-mail");
+        validarCampoObrigatorio(nome, "nome");
         validarCampoObrigatorio(senha, "senha");
 
         if (perfil == null) {
             throw new IllegalArgumentException("perfil é obrigatório.");
         }
 
-        validarDuplicidade(matricula.trim(), email.trim());
+        String email = gerarEmailPadrao(nome, perfil);
+        validarDuplicidade(matricula.trim(), email);
 
-        Usuario novoUsuario = criarUsuario(perfil, matricula.trim(), email.trim(), senha);
+        Usuario novoUsuario = new Usuario(perfil, nome.trim(), matricula.trim(), email, senha);
         usuarios.add(novoUsuario);
         return novoUsuario;
     }
@@ -88,16 +88,36 @@ public class AutenticacaoController {
         }
     }
 
-    private Usuario criarUsuario(PerfilUsuario perfil, String matricula, String email, String senha) {
+    private String gerarEmailPadrao(String nome, PerfilUsuario perfil) {
+        String[] partes = normalizarNomeParaEmail(nome).split("\\.");
+        String primeiroNome = partes[0];
+        String ultimoNome = partes[partes.length - 1];
+        return primeiroNome + "." + ultimoNome + "@" + dominioDoPerfil(perfil) + ".classroom.com";
+    }
+
+    private String normalizarNomeParaEmail(String nome) {
+        String semAcentos = Normalizer.normalize(nome.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        String limpo = semAcentos.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9\\s]", " ")
+                .trim()
+                .replaceAll("\\s+", ".");
+        if (limpo.isEmpty()) {
+            throw new IllegalArgumentException("nome precisa conter letras ou números.");
+        }
+        return limpo;
+    }
+
+    private String dominioDoPerfil(PerfilUsuario perfil) {
         switch (perfil) {
             case ALUNO:
-                return new Aluno(matricula, email, senha);
+                return "aluno";
             case PROFESSOR:
-                return new Professor(matricula, email, senha);
+                return "professor";
             case COORDENADOR:
-                return new Coordenador(matricula, email, senha);
+                return "coordenador";
             case ADMINISTRADOR:
-                return new Administrador(matricula, email, senha);
+                return "admin";
             default:
                 throw new IllegalArgumentException("perfil inválido.");
         }

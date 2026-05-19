@@ -4,22 +4,33 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Usuário autenticável do sistema: matrícula ou e-mail no login (RF02),
- * perfil distinto (RF03), ativo para uso ou inativo após remoção lógica.
+ * Usuario autenticavel do sistema: matricula ou e-mail no login (RF02),
+ * perfil distinto (RF03), ativo para uso ou inativo apos remocao logica.
  */
-public abstract class Usuario {
+public class Usuario {
 
     private final String id;
+    private PerfilUsuario perfil;
+    private String nome;
     private String matricula;
     private String email;
     private String senha;
     private boolean ativo;
 
-    protected Usuario(String id, String matricula, String email, String senha, boolean ativo) {
+    public Usuario(
+            String id,
+            PerfilUsuario perfil,
+            String nome,
+            String matricula,
+            String email,
+            String senha,
+            boolean ativo) {
         this.id = Objects.requireNonNull(id, "id").trim();
         if (this.id.isEmpty()) {
             throw new IllegalArgumentException("id não pode ser vazio");
         }
+        setPerfil(perfil);
+        setNome(nome);
         validarMatricula(matricula);
         validarEmail(email);
         validarSenha(senha);
@@ -29,17 +40,34 @@ public abstract class Usuario {
         this.ativo = ativo;
     }
 
-    /**
-     * Novo usuário ativo com identificador gerado automaticamente.
-     */
-    protected Usuario(String matricula, String email, String senha) {
-        this(UUID.randomUUID().toString(), matricula, email, senha, true);
+    public Usuario(PerfilUsuario perfil, String nome, String matricula, String email, String senha) {
+        this(UUID.randomUUID().toString(), perfil, nome, matricula, email, senha, true);
     }
-
-    public abstract PerfilUsuario getPerfil();
 
     public String getId() {
         return id;
+    }
+
+    public PerfilUsuario getPerfil() {
+        return perfil;
+    }
+
+    public void setPerfil(PerfilUsuario perfil) {
+        if (perfil == null) {
+            throw new IllegalArgumentException("perfil é obrigatório");
+        }
+        this.perfil = perfil;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("nome é obrigatório");
+        }
+        this.nome = nome.trim();
     }
 
     public String getMatricula() {
@@ -79,7 +107,7 @@ public abstract class Usuario {
 
     private static void validarMatricula(String matricula) {
         if (matricula == null || matricula.trim().isEmpty()) {
-            throw new IllegalArgumentException("matrícula é obrigatória");
+            throw new IllegalArgumentException("matricula é obrigatória");
         }
     }
 

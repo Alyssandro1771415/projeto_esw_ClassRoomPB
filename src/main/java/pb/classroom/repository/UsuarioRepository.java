@@ -9,13 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import pb.classroom.model.Administrador;
-import pb.classroom.model.Aluno;
-import pb.classroom.model.Coordenador;
-import pb.classroom.model.PerfilUsuario;
-import pb.classroom.model.Professor;
-import pb.classroom.model.Usuario;
 
+import pb.classroom.model.PerfilUsuario;
+import pb.classroom.model.Usuario;
 
 public class UsuarioRepository {
 
@@ -74,7 +70,12 @@ public class UsuarioRepository {
 
     private List<Usuario> criarESalvarAdministradorInicial() {
         List<Usuario> usuarios = new ArrayList<>();
-        usuarios.add(new Administrador("0001", "admin@classroompb.com", "admin123"));
+        usuarios.add(new Usuario(
+                PerfilUsuario.ADMINISTRADOR,
+                "Administrador Padrao",
+                "0001",
+                "admin@classroompb.com",
+                "admin123"));
         salvarUsuarios(usuarios);
         return usuarios;
     }
@@ -91,12 +92,13 @@ public class UsuarioRepository {
 
             PerfilUsuario perfil = PerfilUsuario.valueOf(obterTexto(objeto, "perfil"));
             String id = obterTexto(objeto, "id");
+            String nome = obterTextoOuPadrao(objeto, "nome", obterTexto(objeto, "matricula"));
             String matricula = obterTexto(objeto, "matricula");
             String email = obterTexto(objeto, "email");
             String senha = obterTexto(objeto, "senha");
             boolean ativo = obterBooleano(objeto, "ativo");
 
-            usuarios.add(criarUsuario(perfil, id, matricula, email, senha, ativo));
+            usuarios.add(new Usuario(id, perfil, nome, matricula, email, senha, ativo));
         }
 
         return usuarios;
@@ -111,6 +113,7 @@ public class UsuarioRepository {
             json.append("    {\n");
             json.append("      \"id\": \"").append(escapar(usuario.getId())).append("\",\n");
             json.append("      \"perfil\": \"").append(usuario.getPerfil()).append("\",\n");
+            json.append("      \"nome\": \"").append(escapar(usuario.getNome())).append("\",\n");
             json.append("      \"matricula\": \"").append(escapar(usuario.getMatricula())).append("\",\n");
             json.append("      \"email\": \"").append(escapar(usuario.getEmail())).append("\",\n");
             json.append("      \"senha\": \"").append(escapar(usuario.getSenha())).append("\",\n");
@@ -127,26 +130,18 @@ public class UsuarioRepository {
         return json.toString();
     }
 
-    private Usuario criarUsuario(
-            PerfilUsuario perfil, String id, String matricula, String email, String senha, boolean ativo) {
-        switch (perfil) {
-            case ALUNO:
-                return new Aluno(id, matricula, email, senha, ativo);
-            case PROFESSOR:
-                return new Professor(id, matricula, email, senha, ativo);
-            case COORDENADOR:
-                return new Coordenador(id, matricula, email, senha, ativo);
-            case ADMINISTRADOR:
-                return new Administrador(id, matricula, email, senha, ativo);
-            default:
-                throw new IllegalArgumentException("perfil inválido.");
-        }
-    }
-
     private String obterTexto(String objeto, String campo) {
         Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*\"((?:\\\\.|[^\"])*)\"").matcher(objeto);
         if (!matcher.find()) {
             throw new IllegalArgumentException("Campo obrigatório ausente no armazenamento: " + campo);
+        }
+        return desescapar(matcher.group(1));
+    }
+
+    private String obterTextoOuPadrao(String objeto, String campo, String padrao) {
+        Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*\"((?:\\\\.|[^\"])*)\"").matcher(objeto);
+        if (!matcher.find()) {
+            return padrao;
         }
         return desescapar(matcher.group(1));
     }

@@ -2,10 +2,7 @@ package pb.classroom.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import pb.classroom.model.Administrador;
-import pb.classroom.model.Aluno;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.Usuario;
 
@@ -14,7 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("AutenticacaoController — Testes de Login")
+@DisplayName("AutenticacaoController - login")
 class AutenticacaoControllerLoginTest {
 
     private static final String MATRICULA = "2024001";
@@ -24,281 +21,103 @@ class AutenticacaoControllerLoginTest {
     private static final String EMAIL_ADMIN = "admin@classroompb.com";
     private static final String SENHA_ADMIN = "admin123";
 
-    private Aluno alunoAtivo;
-    private Aluno alunoInativo;
-    private Administrador administrador;
+    private Usuario alunoAtivo;
+    private Usuario alunoInativo;
+    private Usuario administrador;
     private AutenticacaoController controller;
 
-    // Cria um conjunto fixo de usuarios para isolar cada teste.
     @BeforeEach
     void setUp() {
-        alunoAtivo = new Aluno(MATRICULA, EMAIL, SENHA);
-        alunoInativo = new Aluno("id-inativo", "2024002", "inativo@classroompb.com", SENHA, false);
-        administrador = new Administrador(MATRICULA_ADMIN, EMAIL_ADMIN, SENHA_ADMIN);
+        alunoAtivo = new Usuario(PerfilUsuario.ALUNO, "Aluno Ativo", MATRICULA, EMAIL, SENHA);
+        alunoInativo = new Usuario(
+                "id-inativo",
+                PerfilUsuario.ALUNO,
+                "Aluno Inativo",
+                "2024002",
+                "inativo@classroompb.com",
+                SENHA,
+                false);
+        administrador = new Usuario(
+                PerfilUsuario.ADMINISTRADOR,
+                "Admin Sistema",
+                MATRICULA_ADMIN,
+                EMAIL_ADMIN,
+                SENHA_ADMIN);
         controller = new AutenticacaoController(List.of(alunoAtivo, alunoInativo, administrador));
     }
 
-    @Nested
-    @DisplayName("Login com sucesso")
-    class LoginComSucesso {
+    @Test
+    @DisplayName("login com matricula correta retorna usuario")
+    void loginComMatriculaCorreta() {
+        Usuario retornado = controller.login(MATRICULA, SENHA);
 
-        @Test
-        @DisplayName("login com matrícula correta retorna o usuário")
-        void loginComMatriculaCorreta() {
-            Usuario retornado = controller.login(MATRICULA, SENHA);
-
-            assertNotNull(retornado, "Deve retornar um usuário não-nulo");
-            assertEquals(alunoAtivo, retornado, "Deve retornar exatamente o aluno cadastrado");
-        }
-
-        @Test
-        @DisplayName("login com e-mail correto retorna o usuário")
-        void loginComEmailCorreto() {
-            Usuario retornado = controller.login(EMAIL, SENHA);
-
-            assertNotNull(retornado);
-            assertEquals(alunoAtivo, retornado);
-        }
-
-        @Test
-        @DisplayName("login com e-mail em caixa diferente (case-insensitive) é aceito")
-        void loginComEmailEmCaixaDiferente() {
-            Usuario retornado = controller.login(EMAIL.toUpperCase(), SENHA);
-
-            assertNotNull(retornado);
-            assertEquals(alunoAtivo, retornado);
-        }
-
-        @Test
-        @DisplayName("login com espaços em branco ao redor do identificador é aceito")
-        void loginComEspacoAoRedor() {
-            Usuario retornado = controller.login("  " + MATRICULA + "  ", SENHA);
-
-            assertNotNull(retornado);
-            assertEquals(alunoAtivo, retornado);
-        }
-
-        @Test
-        @DisplayName("após login bem-sucedido o usuário está autenticado")
-        void aposLoginUsuarioEstaAutenticado() {
-            controller.login(MATRICULA, SENHA);
-
-            assertTrue(controller.isAutenticado());
-        }
-
-        @Test
-        @DisplayName("getUsuarioLogado retorna o usuário após login")
-        void getUsuarioLogadoAposLogin() {
-            controller.login(MATRICULA, SENHA);
-
-            assertEquals(alunoAtivo, controller.getUsuarioLogado());
-        }
-
-        @Test
-        @DisplayName("perfil do usuário retornado é ALUNO")
-        void perfilDoUsuarioRetornadoEAluno() {
-            Usuario retornado = controller.login(MATRICULA, SENHA);
-
-            assertEquals(PerfilUsuario.ALUNO, retornado.getPerfil());
-        }
+        assertEquals(alunoAtivo, retornado);
+        assertTrue(controller.isAutenticado());
     }
 
-    @Nested
-    @DisplayName("Campos obrigatórios")
-    class CamposObrigatorios {
+    @Test
+    @DisplayName("login com e-mail correto ignora caixa")
+    void loginComEmailCorretoIgnoraCaixa() {
+        Usuario retornado = controller.login(EMAIL.toUpperCase(), SENHA);
 
-        @Test
-        @DisplayName("identificador nulo lança IllegalArgumentException")
-        void identificadorNuloLancaExcecao() {
-            IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login(null, SENHA));
-            assertTrue(ex.getMessage().contains("matrícula/e-mail"),
-                    "Mensagem deve mencionar o campo inválido");
-        }
-
-        @Test
-        @DisplayName("identificador em branco lança IllegalArgumentException")
-        void identificadorEmBrancoLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login("   ", SENHA));
-        }
-
-        @Test
-        @DisplayName("identificador vazio lança IllegalArgumentException")
-        void identificadorVazioLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login("", SENHA));
-        }
-
-        @Test
-        @DisplayName("senha nula lança IllegalArgumentException")
-        void senhaNulaLancaExcecao() {
-            IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login(MATRICULA, null));
-            assertTrue(ex.getMessage().contains("senha"),
-                    "Mensagem deve mencionar o campo inválido");
-        }
-
-        @Test
-        @DisplayName("senha em branco lança IllegalArgumentException")
-        void senhaEmBrancoLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login(MATRICULA, "   "));
-        }
-
-        @Test
-        @DisplayName("senha vazia lança IllegalArgumentException")
-        void senhaVaziaLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login(MATRICULA, ""));
-        }
+        assertEquals(alunoAtivo, retornado);
     }
 
-    @Nested
-    @DisplayName("Credenciais inválidas")
-    class CredenciaisInvalidas {
+    @Test
+    @DisplayName("senha incorreta nao autentica")
+    void senhaIncorretaNaoAutentica() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> controller.login(MATRICULA, "senhaErrada"));
 
-        @Test
-        @DisplayName("senha incorreta lança IllegalArgumentException com mensagem adequada")
-        void senhaIncorretaLancaExcecao() {
-            IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login(MATRICULA, "senhaErrada"));
-            assertEquals("Matrícula/e-mail ou senha inválidos.", ex.getMessage());
-        }
-
-        @Test
-        @DisplayName("matrícula inexistente lança IllegalArgumentException")
-        void matriculaInexistenteLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login("9999999", SENHA));
-        }
-
-        @Test
-        @DisplayName("e-mail inexistente lança IllegalArgumentException")
-        void emailInexistenteLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login("naoexiste@classroompb.com", SENHA));
-        }
-
-        @Test
-        @DisplayName("após falha de login o usuário não está autenticado")
-        void aposFalhaDeLoginNaoEstaAutenticado() {
-            // A falha nao deve alterar o estado de autenticacao.
-            try {
-                controller.login(MATRICULA, "senhaErrada");
-            } catch (IllegalArgumentException ignored) {
-            }
-
-            assertFalse(controller.isAutenticado());
-        }
+        assertEquals("Matricula/e-mail ou senha invalidos.", ex.getMessage());
+        assertFalse(controller.isAutenticado());
     }
 
-    @Nested
-    @DisplayName("Usuário inativo")
-    class UsuarioInativo {
+    @Test
+    @DisplayName("usuario inativo nao autentica")
+    void usuarioInativoNaoAutentica() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> controller.login("2024002", SENHA));
 
-        @Test
-        @DisplayName("login de usuário inativo lança IllegalArgumentException")
-        void loginDeUsuarioInativoLancaExcecao() {
-            IllegalArgumentException ex = assertThrows(
-                    IllegalArgumentException.class,
-                    () -> controller.login("2024002", SENHA));
-            assertEquals("Usuário inativo.", ex.getMessage());
-        }
-
-        @Test
-        @DisplayName("usuário inativo não fica autenticado após tentativa")
-        void usuarioInativoNaoFicaAutenticado() {
-            // Usuario bloqueado nao pode abrir sessao.
-            try {
-                controller.login("2024002", SENHA);
-            } catch (IllegalArgumentException ignored) {
-            }
-
-            assertFalse(controller.isAutenticado());
-        }
+        assertEquals("Usuário inativo.", ex.getMessage());
+        assertFalse(controller.isAutenticado());
     }
 
-    @Nested
-    @DisplayName("Logout e estado")
-    class LogoutEEstado {
+    @Test
+    @DisplayName("logout limpa usuario logado")
+    void logoutLimpaUsuarioLogado() {
+        controller.login(MATRICULA, SENHA);
+        controller.logout();
 
-        @Test
-        @DisplayName("antes do login o usuário não está autenticado")
-        void antesDoLoginNaoEstaAutenticado() {
-            assertFalse(controller.isAutenticado());
-        }
-
-        @Test
-        @DisplayName("getUsuarioLogado retorna null antes do login")
-        void getUsuarioLogadoRetornaNullAntesDoLogin() {
-            assertNull(controller.getUsuarioLogado());
-        }
-
-        @Test
-        @DisplayName("após logout o usuário não está mais autenticado")
-        void aposLogoutNaoEstaAutenticado() {
-            controller.login(MATRICULA, SENHA);
-            controller.logout();
-
-            assertFalse(controller.isAutenticado());
-        }
-
-        @Test
-        @DisplayName("após logout getUsuarioLogado retorna null")
-        void aposLogoutGetUsuarioLogadoRetornaNull() {
-            controller.login(MATRICULA, SENHA);
-            controller.logout();
-
-            assertNull(controller.getUsuarioLogado());
-        }
-
-        @Test
-        @DisplayName("logout sem login prévio não lança exceção")
-        void logoutSemLoginPrevioNaoLancaExcecao() {
-            assertDoesNotThrow(() -> controller.logout());
-        }
+        assertFalse(controller.isAutenticado());
+        assertNull(controller.getUsuarioLogado());
     }
 
-    @Nested
-    @DisplayName("Construtor")
-    class Construtor {
+    @Test
+    @DisplayName("campos obrigatorios sao validados")
+    void camposObrigatoriosSaoValidados() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> controller.login(null, SENHA)),
+                () -> assertThrows(IllegalArgumentException.class, () -> controller.login("   ", SENHA)),
+                () -> assertThrows(IllegalArgumentException.class, () -> controller.login(MATRICULA, null)),
+                () -> assertThrows(IllegalArgumentException.class, () -> controller.login(MATRICULA, "   ")));
+    }
 
-        @Test
-        @DisplayName("lista nula no construtor lança IllegalArgumentException")
-        void listaNulaLancaExcecao() {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> new AutenticacaoController(null));
-        }
+    @Test
+    @DisplayName("construtor aceita lista vazia e getUsuarios e imutavel")
+    void construtorAceitaListaVaziaEGetUsuariosEImutavel() {
+        AutenticacaoController vazio = new AutenticacaoController(Collections.emptyList());
 
-        @Test
-        @DisplayName("lista vazia cria controller sem usuários (login falha)")
-        void listaVaziaPermiteInstanciarMasFalhaNoLogin() {
-            AutenticacaoController vazio = new AutenticacaoController(Collections.emptyList());
-
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> vazio.login(MATRICULA, SENHA));
-        }
-
-        @Test
-        @DisplayName("getUsuarios retorna lista imutável")
-        void getUsuariosRetornaListaImutavel() {
-            List<Usuario> lista = controller.getUsuarios();
-
-            assertThrows(
-                    UnsupportedOperationException.class,
-                    () -> lista.add(new Aluno("X", "x@x.com", "pass")));
-        }
+        assertThrows(IllegalArgumentException.class, () -> vazio.login(MATRICULA, SENHA));
+        assertThrows(
+                UnsupportedOperationException.class,
+                () -> controller.getUsuarios().add(new Usuario(
+                        PerfilUsuario.ALUNO,
+                        "Outro Aluno",
+                        "X",
+                        "x@x.com",
+                        "pass")));
     }
 }

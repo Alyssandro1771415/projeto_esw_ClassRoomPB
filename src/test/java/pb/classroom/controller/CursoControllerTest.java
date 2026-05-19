@@ -3,10 +3,9 @@ package pb.classroom.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import pb.classroom.model.Administrador;
-import pb.classroom.model.Aluno;
 import pb.classroom.model.Curso;
 import pb.classroom.model.PerfilUsuario;
+import pb.classroom.model.Usuario;
 
 import java.util.List;
 
@@ -23,8 +22,8 @@ class CursoControllerTest {
     @BeforeEach
     void setUp() {
         autenticacaoController = new AutenticacaoController(List.of(
-                new Administrador("0001", "admin@classroompb.com", SENHA),
-                new Aluno("2026001", "aluno@classroompb.com", SENHA)));
+                new Usuario(PerfilUsuario.ADMINISTRADOR, "Admin Sistema", "0001", "admin@classroompb.com", SENHA),
+                new Usuario(PerfilUsuario.ALUNO, "Aluno Teste", "2026001", "aluno@classroompb.com", SENHA)));
         cursoController = new CursoController(autenticacaoController, List.of());
     }
 

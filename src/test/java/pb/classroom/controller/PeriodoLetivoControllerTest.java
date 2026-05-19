@@ -3,9 +3,9 @@ package pb.classroom.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import pb.classroom.model.Administrador;
-import pb.classroom.model.Coordenador;
+import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.Usuario;
 
 import java.util.List;
 
@@ -22,8 +22,8 @@ class PeriodoLetivoControllerTest {
     @BeforeEach
     void setUp() {
         autenticacaoController = new AutenticacaoController(List.of(
-                new Administrador("0001", "admin@classroompb.com", SENHA),
-                new Coordenador("C001", "coord@classroompb.com", SENHA)));
+                new Usuario(PerfilUsuario.ADMINISTRADOR, "Admin Sistema", "0001", "admin@classroompb.com", SENHA),
+                new Usuario(PerfilUsuario.COORDENADOR, "Coord Curso", "C001", "coord@classroompb.com", SENHA)));
         periodoLetivoController = new PeriodoLetivoController(autenticacaoController, List.of());
     }
 
@@ -49,7 +49,7 @@ class PeriodoLetivoControllerTest {
                 IllegalArgumentException.class,
                 () -> periodoLetivoController.cadastrarPeriodoLetivo("2026.2"));
 
-        assertEquals("Apenas coordenadores podem gerenciar periodos letivos.", ex.getMessage());
+        assertEquals("Apenas coordenadores podem gerenciar períodos letivos.", ex.getMessage());
         assertTrue(periodoLetivoController.getPeriodosLetivos().isEmpty());
     }
 
