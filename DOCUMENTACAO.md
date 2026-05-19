@@ -1,30 +1,34 @@
-# Documentação do Projeto ClassRoomPB
+# Documentacao do Projeto ClassRoomPB
 
-## 1. Visão Geral
+## 1. Visao Geral
 
-O **ClassRoomPB** é um sistema acadêmico simplificado desenvolvido em Java para a disciplina de Engenharia de Software II. O sistema utiliza uma interface de linha de comando (CLI), persistência local em arquivo JSON e organização baseada no padrão MVC.
+O **ClassRoomPB** e um sistema academico simplificado desenvolvido em Java para a disciplina de Engenharia de Software II. O sistema usa interface de linha de comando (CLI), persistencia local em arquivo JSON e organizacao baseada no padrao MVC.
 
-O objetivo atual do projeto é atender ao núcleo inicial da Release 1, com foco em:
+O projeto cobre atualmente:
 
-- Cadastro e autenticação de usuários.
+- Cadastro e autenticacao de usuarios.
 - Controle de perfis de acesso.
-- Cadastro de cursos.
-- Cadastro de disciplinas.
-- Cadastro, ativação e encerramento de períodos letivos.
-- Persistência local dos dados.
+- Listagem de usuarios para administradores.
+- Cadastro e listagem de cursos.
+- Cadastro e listagem de disciplinas vinculadas a cursos existentes.
+- Cadastro, ativacao e encerramento de periodos letivos.
+- Persistencia local dos dados.
 - Testes automatizados com JUnit 5.
+- Geracao automatica do relatorio `TESTE.md` ao rodar a suite de testes Maven.
 
-O projeto não utiliza API web, banco de dados externo ou interface gráfica. Toda interação acontece pelo terminal.
+O projeto nao utiliza API web, banco de dados externo ou interface grafica. Toda interacao acontece pelo terminal.
 
 ## 2. Tecnologias Utilizadas
 
-- **Java 11** como versão de compilação definida no Maven.
-- **Maven** para compilação, execução e gerenciamento de dependências.
+- **Java 11** como versao de compilacao definida no Maven.
+- **Maven** para compilacao, execucao, testes e gerenciamento de dependencias.
 - **JUnit 5.10.2** para testes automatizados.
-- **JSON local** como mecanismo de persistência.
+- **JSON local** como mecanismo de persistencia.
 - **CLI** com `Scanner` para entrada de dados pelo terminal.
+- **maven-surefire-plugin** para execucao e geracao dos XMLs de teste.
+- **exec-maven-plugin** para gerar automaticamente o `TESTE.md` na fase `test`.
 
-As configurações principais estão no arquivo `pom.xml`.
+As configuracoes principais estao em `pom.xml`.
 
 ## 3. Estrutura de Pastas
 
@@ -33,6 +37,7 @@ projeto_esw_ClassRoomPB/
 +-- pom.xml
 +-- README.md
 +-- DOCUMENTACAO.md
++-- TESTE.md
 +-- armazenamento_interno.json
 +-- releases/
 +-- src/
@@ -51,12 +56,13 @@ projeto_esw_ClassRoomPB/
 |               +-- classroom/
 |                   +-- controller/
 |                   +-- model/
+|                   +-- report/
 +-- target/
 ```
 
 ## 4. Arquitetura MVC
 
-O projeto segue uma divisão simples em camadas:
+O projeto segue uma divisao simples em camadas:
 
 ```mermaid
 flowchart TD
@@ -69,23 +75,21 @@ flowchart TD
 
 ### Camada `model`
 
-Contém as entidades e enumerações do domínio acadêmico. Exemplos:
+Contem as entidades e enumeracoes do dominio academico:
 
 - `Usuario`
-- `Aluno`
-- `Professor`
-- `Coordenador`
-- `Administrador`
+- `PerfilUsuario`
 - `Curso`
 - `Disciplina`
 - `PeriodoLetivo`
 - `Turma`
 - `BlocoHorario`
-- `PerfilUsuario`
+
+Observacao importante: as classes `Aluno`, `Professor`, `Coordenador` e `Administrador` foram removidas. Agora existe apenas `Usuario`, que armazena diretamente seu `PerfilUsuario`.
 
 ### Camada `controller`
 
-Contém as regras de fluxo e validações de acesso. Os controllers não salvam diretamente em arquivo; eles manipulam listas em memória e retornam os objetos cadastrados.
+Contem as regras de fluxo e validacoes de acesso. Os controllers manipulam listas em memoria e retornam os objetos cadastrados; a persistencia e acionada pela CLI.
 
 Controllers atuais:
 
@@ -96,7 +100,7 @@ Controllers atuais:
 
 ### Camada `repository`
 
-Responsável por carregar e salvar dados no arquivo `armazenamento_interno.json`.
+Responsavel por carregar e salvar dados em `armazenamento_interno.json`.
 
 Repositories atuais:
 
@@ -108,23 +112,18 @@ Repositories atuais:
 
 ### Camada `view`
 
-Contém a interface de terminal:
+Contem a interface de terminal:
 
 - `ClassRoomCLI`
 
-Essa classe exibe menus, lê dados do usuário, chama controllers e aciona repositories para salvar os dados.
+Essa classe exibe menus, le dados do usuario, chama controllers e aciona repositories para salvar os dados.
 
-## 5. Execução do Projeto
+## 5. Execucao do Projeto
 
-Para executar o projeto, entre na raiz:
+Na raiz do projeto:
 
 ```powershell
 cd "C:\Users\rodri\Desktop\ESW2\projeto_esw_ClassRoomPB"
-```
-
-Depois rode:
-
-```powershell
 mvn compile exec:java
 ```
 
@@ -134,27 +133,41 @@ Classe principal:
 pb.classroom.Main
 ```
 
-O `Main` apenas instancia a CLI e chama o método `iniciar()`.
+O `Main` instancia a CLI e chama o metodo `iniciar()`.
 
-## 6. Execução dos Testes
+## 6. Execucao dos Testes e Relatorio TESTE
 
-Na raiz do projeto:
+Para rodar todos os testes:
 
 ```powershell
 mvn test
 ```
 
-Os testes estão em:
+Ou, para limpar os arquivos gerados antes de testar:
 
-```text
-src/test/java
+```powershell
+mvn clean test
 ```
 
-Observação: é necessário ter o Maven instalado e disponível no `PATH` para executar os comandos `mvn`.
+Ao rodar `mvn test` ou `mvn clean test`, o Maven:
 
-## 7. Usuários Iniciais e Persistência
+1. Executa os testes com o `maven-surefire-plugin`.
+2. Gera arquivos XML em `target/surefire-reports`.
+3. Executa a classe `pb.classroom.report.TesteMarkdownReport`.
+4. Le os XMLs `TEST-*.xml`.
+5. Reescreve automaticamente o arquivo `TESTE.md` com o resumo atualizado.
 
-O arquivo de persistência é:
+O `TESTE.md` mostra:
+
+- Data e hora da geracao.
+- Status geral do build.
+- Total de testes.
+- Falhas, erros e testes ignorados.
+- Resultado por suite de teste.
+
+## 7. Usuarios Iniciais e Persistencia
+
+O arquivo de persistencia e:
 
 ```text
 armazenamento_interno.json
@@ -167,24 +180,19 @@ Ele armazena:
 - `cursos`
 - `periodosLetivos`
 
-Caso o arquivo não exista ou não possua usuários, o sistema cria automaticamente um administrador inicial:
+Caso o arquivo nao exista ou nao possua usuarios, o sistema cria automaticamente um administrador inicial:
 
 ```text
-Matrícula: 0001
+Nome: Administrador Padrao
+Matricula: 0001
 E-mail: admin@classroompb.com
 Senha: admin123
 Perfil: ADMINISTRADOR
 ```
 
-No estado atual do arquivo, também existem usuários de exemplo:
+## 8. Perfis de Usuario
 
-- Administrador: `admin@classroompb.com`
-- Aluno: `lucas@classroompb.com`
-- Coordenador: `coordenador@classroompb.com`
-
-## 8. Perfis de Usuário
-
-Os perfis são definidos no enum `PerfilUsuario`:
+Os perfis sao definidos no enum `PerfilUsuario`:
 
 ```java
 ALUNO,
@@ -193,81 +201,67 @@ COORDENADOR,
 ADMINISTRADOR
 ```
 
-Cada classe concreta de usuário sobrescreve `getPerfil()`:
-
-- `Aluno` retorna `PerfilUsuario.ALUNO`.
-- `Professor` retorna `PerfilUsuario.PROFESSOR`.
-- `Coordenador` retorna `PerfilUsuario.COORDENADOR`.
-- `Administrador` retorna `PerfilUsuario.ADMINISTRADOR`.
-
-Essa lógica é importante para as regras de permissão do sistema.
+O perfil nao depende mais de heranca. Cada objeto `Usuario` possui um campo `perfil`, que e usado pelos controllers e pela CLI para aplicar regras de acesso.
 
 ## 9. Funcionalidades por Perfil
 
-A classe `ClassRoomCLI` mostra opções diferentes conforme o perfil logado.
+A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 
 ### Sem login
-
-Opções exibidas:
 
 - Login.
 - Sair.
 
 ### Administrador
 
-Pode:
-
 - Trocar login.
-- Ver dados do usuário logado.
-- Fazer logout.
-- Cadastrar usuário.
+- Ver dados do usuario logado.
+- Logout.
+- Cadastrar usuario.
 - Cadastrar curso.
 - Listar cursos.
+- Listar usuarios.
 
 ### Coordenador
 
-Pode:
-
 - Trocar login.
-- Ver dados do usuário logado.
-- Fazer logout.
+- Ver dados do usuario logado.
+- Logout.
 - Cadastrar disciplina.
 - Listar disciplinas.
 - Listar cursos.
-- Cadastrar período letivo.
-- Listar períodos letivos.
-- Ativar período letivo.
-- Encerrar período letivo.
+- Cadastrar periodo letivo.
+- Listar periodos letivos.
+- Ativar periodo letivo.
+- Encerrar periodo letivo.
 
 ### Professor
 
-Pode:
-
 - Trocar login.
-- Ver dados do usuário logado.
-- Fazer logout.
+- Ver dados do usuario logado.
+- Logout.
 - Listar disciplinas.
-- Listar períodos letivos.
+- Listar periodos letivos.
 
 ### Aluno
 
-Pode:
-
 - Trocar login.
-- Ver dados do usuário logado.
-- Fazer logout.
+- Ver dados do usuario logado.
+- Logout.
 - Listar disciplinas.
-- Listar períodos letivos.
+- Listar periodos letivos.
 
 ## 10. Classes do Pacote `pb.classroom.model`
 
 ### `Usuario`
 
-Classe abstrata base para todos os usuários autenticáveis.
+Classe concreta para todos os usuarios autenticaveis.
 
 Atributos:
 
 - `id`
+- `perfil`
+- `nome`
 - `matricula`
 - `email`
 - `senha`
@@ -275,57 +269,22 @@ Atributos:
 
 Responsabilidades:
 
-- Validar matrícula obrigatória.
-- Validar e-mail obrigatório.
-- Validar senha obrigatória.
+- Validar perfil obrigatorio.
+- Validar nome obrigatorio.
+- Validar matricula obrigatoria.
+- Validar e-mail obrigatorio.
+- Validar senha obrigatoria.
 - Armazenar estado ativo/inativo.
-- Definir o contrato abstrato `getPerfil()`.
 - Implementar igualdade por `id`.
-
-### `Aluno`
-
-Representa usuário com perfil de aluno.
-
-Responsabilidade principal:
-
-- Retornar `PerfilUsuario.ALUNO`.
-
-### `Professor`
-
-Representa usuário com perfil de professor.
-
-Responsabilidade principal:
-
-- Retornar `PerfilUsuario.PROFESSOR`.
-
-### `Coordenador`
-
-Representa usuário com perfil de coordenador.
-
-Responsabilidade principal:
-
-- Retornar `PerfilUsuario.COORDENADOR`.
-
-### `Administrador`
-
-Representa usuário com perfil de administrador.
-
-Responsabilidade principal:
-
-- Retornar `PerfilUsuario.ADMINISTRADOR`.
-
-No fluxo atual, apenas administradores podem cadastrar usuários e cursos.
 
 ### `PerfilUsuario`
 
-Enum que centraliza os papéis existentes no sistema:
+Enum que centraliza os papeis existentes no sistema:
 
 - `ALUNO`
 - `PROFESSOR`
 - `COORDENADOR`
 - `ADMINISTRADOR`
-
-É usado pelos controllers e pela CLI para aplicar regras de acesso.
 
 ### `Curso`
 
@@ -339,10 +298,10 @@ Atributos:
 
 Regras:
 
-- `id` não pode ser nulo ou vazio.
-- `nome` é obrigatório.
-- `codigo` é opcional.
-- Igualdade é feita pelo `id`.
+- `id` nao pode ser nulo ou vazio.
+- `nome` e obrigatorio.
+- `codigo` e opcional.
+- Igualdade e feita pelo `id`.
 
 ### `Disciplina`
 
@@ -360,19 +319,21 @@ Atributos:
 
 Regras:
 
-- Código é obrigatório.
-- Nome é obrigatório.
-- Carga horária deve ser positiva.
-- Créditos devem ser positivos.
-- ID do curso é obrigatório.
-- Pré-requisitos são opcionais.
-- Uma disciplina não pode ser pré-requisito dela mesma.
-- Não pode haver pré-requisito duplicado.
-- A lista de pré-requisitos retornada é imutável.
+- Codigo e obrigatorio.
+- Nome e obrigatorio.
+- Carga horaria deve ser positiva.
+- Creditos devem ser positivos.
+- ID do curso e obrigatorio.
+- O curso informado deve existir na lista de cursos conhecida pelo `DisciplinaController`.
+- Pre-requisitos sao opcionais.
+- Pre-requisitos informados precisam existir.
+- Uma disciplina nao pode ser pre-requisito dela mesma.
+- Nao pode haver pre-requisito duplicado.
+- A lista de pre-requisitos retornada e imutavel.
 
 ### `PeriodoLetivo`
 
-Representa um período letivo, como `2026.2`.
+Representa um periodo letivo, como `2026.2`.
 
 Atributos:
 
@@ -382,13 +343,13 @@ Atributos:
 
 Regras:
 
-- `id` não pode ser nulo ou vazio.
-- `codigo` é obrigatório.
+- `id` nao pode ser nulo ou vazio.
+- `codigo` e obrigatorio.
 - `codigo` deve seguir o formato `AAAA.N`, por exemplo `2026.2`.
-- Um período novo inicia como encerrado/inativo.
+- Um periodo novo inicia como encerrado/inativo.
 - Pode ser ativado com `ativar()`.
 - Pode ser encerrado com `encerrar()`.
-- Igualdade é feita pelo `id`.
+- Igualdade e feita pelo `id`.
 
 ### `BlocoHorario`
 
@@ -402,17 +363,15 @@ Atributos:
 
 Regras:
 
-- Dia da semana é obrigatório.
-- Hora de início é obrigatória.
-- Hora de fim é obrigatória.
-- Hora de fim deve ser depois da hora de início.
-- Igualdade considera dia, início e fim.
-
-Essa classe prepara a base para regras futuras de choque de horário.
+- Dia da semana e obrigatorio.
+- Hora de inicio e obrigatoria.
+- Hora de fim e obrigatoria.
+- Hora de fim deve ser depois da hora de inicio.
+- Igualdade considera dia, inicio e fim.
 
 ### `Turma`
 
-Representa uma turma ofertada para uma disciplina em um período letivo.
+Representa uma turma ofertada para uma disciplina em um periodo letivo.
 
 Atributos:
 
@@ -426,29 +385,18 @@ Atributos:
 - `horarios`
 - `cancelada`
 
-Regras:
-
-- ID da disciplina é obrigatório.
-- ID do período letivo é obrigatório.
-- ID do professor é obrigatório.
-- Limite de vagas deve ser positivo.
-- Sala é obrigatória.
-- Data de início é obrigatória.
-- A turma deve ter ao menos um bloco de horário.
-- Igualdade é feita pelo `id`.
-
-Observação: a classe `Turma` já existe como base de domínio, mas ainda não há controller, repository ou menu completo para oferta de turmas.
+Observacao: a classe `Turma` existe como base de dominio, mas ainda nao ha controller, repository ou menu completo para oferta de turmas.
 
 ## 11. Classes do Pacote `pb.classroom.controller`
 
 ### `AutenticacaoController`
 
-Controla login, logout, sessão atual e cadastro de usuários.
+Controla login, logout, sessao atual e cadastro de usuarios.
 
-Principais métodos:
+Principais metodos:
 
 - `login(String identificador, String senha)`
-- `cadastrarUsuario(PerfilUsuario perfil, String matricula, String email, String senha)`
+- `cadastrarUsuario(PerfilUsuario perfil, String matricula, String nome, String senha)`
 - `logout()`
 - `isAutenticado()`
 - `getUsuarioLogado()`
@@ -456,20 +404,41 @@ Principais métodos:
 
 Regras:
 
-- Login aceita matrícula ou e-mail.
-- E-mail é comparado sem diferenciar maiúsculas/minúsculas.
+- Login aceita matricula ou e-mail.
+- E-mail e comparado sem diferenciar maiusculas/minusculas.
 - Senha precisa ser exatamente igual.
-- Usuário inativo não consegue logar.
-- Apenas administrador autenticado pode cadastrar usuários.
-- Não permite matrícula duplicada.
-- Não permite e-mail duplicado.
-- `getUsuarios()` retorna lista imutável.
+- Usuario inativo nao consegue logar.
+- Apenas administrador autenticado pode cadastrar usuarios.
+- Cadastro exige perfil, matricula, nome e senha.
+- O e-mail e gerado automaticamente a partir do nome e perfil.
+- Nao permite matricula duplicada.
+- Nao permite e-mail gerado duplicado.
+- `getUsuarios()` retorna lista imutavel.
+
+Regra de e-mail automatico:
+
+```text
+Nome: Rodrigo Almeida Gomes
+Perfil: ALUNO
+E-mail: rodrigo.gomes@aluno.classroom.com
+
+Nome: Rodrigo Almeida Gomes
+Perfil: ADMINISTRADOR
+E-mail: rodrigo.gomes@admin.classroom.com
+```
+
+Dominios por perfil:
+
+- `ALUNO`: `@aluno.classroom.com`
+- `PROFESSOR`: `@professor.classroom.com`
+- `COORDENADOR`: `@coordenador.classroom.com`
+- `ADMINISTRADOR`: `@admin.classroom.com`
 
 ### `CursoController`
 
 Controla o cadastro de cursos.
 
-Principais métodos:
+Principais metodos:
 
 - `cadastrarCurso(String nome, String codigo)`
 - `getCursos()`
@@ -477,16 +446,16 @@ Principais métodos:
 Regras:
 
 - Apenas administrador autenticado pode cadastrar curso.
-- Nome do curso é obrigatório.
-- Não permite curso duplicado por nome.
-- Não permite código duplicado quando o código é informado.
-- `getCursos()` retorna lista imutável.
+- Nome do curso e obrigatorio.
+- Nao permite curso duplicado por nome.
+- Nao permite codigo duplicado quando o codigo e informado.
+- `getCursos()` retorna lista imutavel.
 
 ### `DisciplinaController`
 
 Controla o cadastro de disciplinas.
 
-Principais métodos:
+Principais metodos:
 
 - `cadastrarDisciplina(String codigo, String nome, int cargaHoraria, int creditos, String idCurso, List<String> preRequisitosIds)`
 - `getDisciplinas()`
@@ -494,18 +463,19 @@ Principais métodos:
 Regras:
 
 - Apenas coordenador autenticado pode cadastrar disciplina.
-- Código da disciplina é obrigatório.
-- Não permite disciplina duplicada por código.
-- Pré-requisitos informados precisam existir na lista atual de disciplinas.
-- `getDisciplinas()` retorna lista imutável.
-
-Observação: no estado atual, o controller exige um `idCurso`, mas não valida se o curso existe no `CursoRepository`.
+- Codigo da disciplina e obrigatorio.
+- Nao permite disciplina duplicada por codigo.
+- O `idCurso` e obrigatorio.
+- O curso informado precisa existir.
+- Cursos cadastrados durante a mesma execucao sao reconhecidos pelo controller.
+- Pre-requisitos informados precisam existir na lista atual de disciplinas.
+- `getDisciplinas()` retorna lista imutavel.
 
 ### `PeriodoLetivoController`
 
-Controla cadastro e alteração de status dos períodos letivos.
+Controla cadastro e alteracao de status dos periodos letivos.
 
-Principais métodos:
+Principais metodos:
 
 - `cadastrarPeriodoLetivo(String codigo)`
 - `ativarPeriodoLetivo(String id)`
@@ -514,39 +484,39 @@ Principais métodos:
 
 Regras:
 
-- Apenas coordenador autenticado pode gerenciar períodos letivos.
-- Código é obrigatório.
-- Código não pode ser duplicado.
-- O formato do código é validado pelo model `PeriodoLetivo`.
-- Só é possível ativar ou encerrar período existente.
-- `getPeriodosLetivos()` retorna lista imutável.
+- Apenas coordenador autenticado pode gerenciar periodos letivos.
+- Codigo e obrigatorio.
+- Codigo nao pode ser duplicado.
+- O formato do codigo e validado pelo model `PeriodoLetivo`.
+- So e possivel ativar ou encerrar periodo existente.
+- `getPeriodosLetivos()` retorna lista imutavel.
 
 ## 12. Classes do Pacote `pb.classroom.repository`
 
 ### `ArmazenamentoJson`
 
-Classe utilitária interna para manipular arrays dentro do arquivo JSON.
+Classe utilitaria interna para manipular arrays dentro do arquivo JSON.
 
 Responsabilidades:
 
 - Extrair arrays por nome de campo.
-- Retornar `[]` quando um campo ainda não existe.
-- Montar o documento completo de persistência com usuários, disciplinas, cursos e períodos letivos.
-- Validar se os conteúdos salvos como arrays começam com `[` e terminam com `]`.
+- Retornar `[]` quando um campo ainda nao existe.
+- Montar o documento completo de persistencia com usuarios, disciplinas, cursos e periodos letivos.
+- Validar se os conteudos salvos como arrays comecam com `[` e terminam com `]`.
 
-Observação técnica: a implementação usa manipulação manual de texto e expressões regulares. Funciona para a estrutura atual simples, mas não substitui uma biblioteca JSON completa.
+Observacao tecnica: a implementacao usa manipulacao manual de texto e expressoes regulares. Funciona para a estrutura atual simples, mas nao substitui uma biblioteca JSON completa.
 
 ### `UsuarioRepository`
 
-Carrega e salva usuários.
+Carrega e salva usuarios.
 
 Responsabilidades:
 
-- Ler usuários de `armazenamento_interno.json`.
-- Criar administrador inicial se não houver arquivo ou lista de usuários.
-- Converter JSON em objetos `Aluno`, `Professor`, `Coordenador` e `Administrador`.
+- Ler usuarios de `armazenamento_interno.json`.
+- Criar administrador inicial se nao houver arquivo ou lista de usuarios.
+- Converter JSON em objetos `Usuario`.
 - Converter objetos `Usuario` em JSON.
-- Preservar disciplinas, cursos e períodos letivos ao salvar usuários.
+- Preservar disciplinas, cursos e periodos letivos ao salvar usuarios.
 
 ### `CursoRepository`
 
@@ -557,7 +527,7 @@ Responsabilidades:
 - Ler o array `cursos`.
 - Converter JSON em objetos `Curso`.
 - Converter cursos em JSON.
-- Preservar usuários, disciplinas e períodos letivos ao salvar cursos.
+- Preservar usuarios, disciplinas e periodos letivos ao salvar cursos.
 
 ### `DisciplinaRepository`
 
@@ -568,23 +538,23 @@ Responsabilidades:
 - Ler o array `disciplinas`.
 - Converter JSON em objetos `Disciplina`.
 - Converter disciplinas em JSON.
-- Salvar pré-requisitos como lista de IDs.
-- Preservar usuários, cursos e períodos letivos ao salvar disciplinas.
+- Salvar pre-requisitos como lista de IDs.
+- Preservar usuarios, cursos e periodos letivos ao salvar disciplinas.
 
 ### `PeriodoLetivoRepository`
 
-Carrega e salva períodos letivos.
+Carrega e salva periodos letivos.
 
 Responsabilidades:
 
 - Ler o array `periodosLetivos`.
 - Converter JSON em objetos `PeriodoLetivo`.
-- Converter períodos em JSON.
-- Preservar usuários, disciplinas e cursos ao salvar períodos.
+- Converter periodos em JSON.
+- Preservar usuarios, disciplinas e cursos ao salvar periodos.
 
 ## 13. Classe `ClassRoomCLI`
 
-`ClassRoomCLI` é a interface de linha de comando do sistema.
+`ClassRoomCLI` e a interface de linha de comando do sistema.
 
 Responsabilidades:
 
@@ -592,233 +562,242 @@ Responsabilidades:
 - Carregar dados salvos.
 - Criar controllers.
 - Exibir menu principal.
-- Exibir funcionalidades conforme o perfil do usuário.
+- Exibir funcionalidades conforme o perfil do usuario.
 - Ler entradas pelo terminal.
-- Tratar exceções de validação e exibir mensagens.
-- Salvar dados após cadastros ou alterações.
+- Tratar excecoes de validacao e exibir mensagens.
+- Salvar dados apos cadastros ou alteracoes.
 
 Fluxos implementados:
 
 - Login.
-- Ver dados do usuário logado.
+- Ver dados do usuario logado.
 - Logout.
-- Cadastro de usuário.
+- Cadastro de usuario.
+- Listagem de usuarios.
 - Cadastro de disciplina.
 - Listagem de disciplinas.
 - Cadastro de curso.
 - Listagem de cursos.
-- Cadastro de período letivo.
-- Listagem de períodos letivos.
-- Ativação de período letivo.
-- Encerramento de período letivo.
+- Cadastro de periodo letivo.
+- Listagem de periodos letivos.
+- Ativacao de periodo letivo.
+- Encerramento de periodo letivo.
 
-## 14. Menu da Aplicação
+## 14. Menu da Aplicacao
 
-Opções existentes no código:
+Opcoes existentes no codigo:
 
 ```text
 1  - Login / Trocar login
-2  - Ver dados do usuário logado
+2  - Ver dados do usuario logado
 3  - Logout
-4  - Cadastrar usuário
+4  - Cadastrar usuario
 5  - Cadastrar disciplina
 6  - Listar disciplinas
 7  - Cadastrar curso
 8  - Listar cursos
-9  - Cadastrar período letivo
-10 - Listar períodos letivos
-11 - Ativar período letivo
-12 - Encerrar período letivo
+9  - Cadastrar periodo letivo
+10 - Listar periodos letivos
+11 - Ativar periodo letivo
+12 - Encerrar periodo letivo
+13 - Listar usuarios
 0  - Sair
 ```
 
-Nem todas as opções aparecem para todos os perfis. A exibição é filtrada no método `exibirFuncionalidadesPorPerfil`.
+Nem todas as opcoes aparecem para todos os perfis. A exibicao e filtrada no metodo `exibirFuncionalidadesPorPerfil`.
 
-Mesmo que o usuário digite uma opção escondida, os métodos também validam o perfil antes de executar a ação.
+Mesmo que o usuario digite uma opcao escondida, os metodos tambem validam o perfil antes de executar a acao.
 
-## 15. Fluxo de Cadastro de Usuário
+## 15. Fluxo de Cadastro de Usuario
 
-1. Usuário precisa estar autenticado.
-2. Usuário precisa ter perfil `ADMINISTRADOR`.
-3. A CLI solicita o tipo de usuário:
+1. Usuario precisa estar autenticado.
+2. Usuario precisa ter perfil `ADMINISTRADOR`.
+3. A CLI solicita o tipo de usuario:
    - Aluno
    - Professor
    - Coordenador
    - Administrador
-4. A CLI solicita matrícula, e-mail e senha.
+4. A CLI solicita matricula, nome completo e senha.
 5. O `AutenticacaoController` valida:
-   - Perfil obrigatório.
-   - Matrícula obrigatória.
-   - E-mail obrigatório.
-   - Senha obrigatória.
-   - Duplicidade de matrícula.
-   - Duplicidade de e-mail.
-6. O usuário é criado.
-7. O `UsuarioRepository` salva a lista no JSON.
+   - Perfil obrigatorio.
+   - Matricula obrigatoria.
+   - Nome obrigatorio.
+   - Senha obrigatoria.
+   - Duplicidade de matricula.
+   - Duplicidade do e-mail gerado.
+6. O e-mail e gerado automaticamente pelo primeiro e ultimo nome e pelo perfil.
+7. O usuario e criado.
+8. O `UsuarioRepository` salva a lista no JSON.
 
 ## 16. Fluxo de Login
 
-1. A CLI solicita matrícula/e-mail e senha.
-2. O `AutenticacaoController` procura usuário por matrícula ou e-mail.
-3. Se encontrar e a senha estiver correta, salva o usuário como sessão atual.
-4. Se o usuário estiver inativo, o login é negado.
-5. Se os dados estiverem incorretos, uma exceção é lançada e a CLI mostra a mensagem.
+1. A CLI solicita matricula/e-mail e senha.
+2. O `AutenticacaoController` procura usuario por matricula ou e-mail.
+3. Se encontrar e a senha estiver correta, salva o usuario como sessao atual.
+4. Se o usuario estiver inativo, o login e negado.
+5. Se os dados estiverem incorretos, uma excecao e lancada e a CLI mostra a mensagem.
 
 ## 17. Fluxo de Cadastro de Curso
 
-1. Usuário precisa estar autenticado.
-2. Usuário precisa ter perfil `ADMINISTRADOR`.
-3. A CLI solicita nome e código opcional.
+1. Usuario precisa estar autenticado.
+2. Usuario precisa ter perfil `ADMINISTRADOR`.
+3. A CLI solicita nome e codigo opcional.
 4. O `CursoController` valida:
    - Administrador autenticado.
-   - Nome obrigatório.
-   - Nome não duplicado.
-   - Código não duplicado quando informado.
-5. O curso é criado.
+   - Nome obrigatorio.
+   - Nome nao duplicado.
+   - Codigo nao duplicado quando informado.
+5. O curso e criado.
 6. O `CursoRepository` salva os cursos no JSON.
 
 ## 18. Fluxo de Cadastro de Disciplina
 
-1. Usuário precisa estar autenticado.
-2. Usuário precisa ter perfil `COORDENADOR`.
-3. A CLI exibe disciplinas existentes para possível uso como pré-requisito.
-4. A CLI solicita:
-   - Código.
+1. Usuario precisa estar autenticado.
+2. Usuario precisa ter perfil `COORDENADOR`.
+3. A CLI exibe cursos existentes para que o coordenador escolha o curso da disciplina.
+4. A CLI exibe disciplinas existentes para possivel uso como pre-requisito.
+5. A CLI solicita:
+   - Codigo.
    - Nome.
-   - Carga horária.
-   - Créditos.
+   - Carga horaria.
+   - Creditos.
    - ID do curso.
-   - IDs dos pré-requisitos.
-5. A CLI converte carga horária e créditos para inteiro.
-6. O `DisciplinaController` valida:
+   - IDs dos pre-requisitos.
+6. A CLI converte carga horaria e creditos para inteiro.
+7. O `DisciplinaController` valida:
    - Coordenador autenticado.
-   - Código obrigatório.
-   - Código não duplicado.
-   - Pré-requisitos existentes.
-7. O model `Disciplina` valida:
-   - Nome obrigatório.
-   - Carga horária positiva.
-   - Créditos positivos.
-   - ID de curso obrigatório.
-   - Pré-requisitos sem duplicidade.
-8. O `DisciplinaRepository` salva as disciplinas no JSON.
+   - Codigo obrigatorio.
+   - Codigo nao duplicado.
+   - Curso existente.
+   - Pre-requisitos existentes.
+8. O model `Disciplina` valida:
+   - Nome obrigatorio.
+   - Carga horaria positiva.
+   - Creditos positivos.
+   - ID de curso obrigatorio.
+   - Pre-requisitos sem duplicidade.
+9. O `DisciplinaRepository` salva as disciplinas no JSON.
 
-## 19. Fluxo de Cadastro e Status de Período Letivo
+## 19. Fluxo de Cadastro e Status de Periodo Letivo
 
 Cadastro:
 
-1. Usuário precisa estar autenticado.
-2. Usuário precisa ter perfil `COORDENADOR`.
-3. A CLI solicita o código do período, por exemplo `2026.2`.
+1. Usuario precisa estar autenticado.
+2. Usuario precisa ter perfil `COORDENADOR`.
+3. A CLI solicita o codigo do periodo, por exemplo `2026.2`.
 4. O `PeriodoLetivoController` valida:
    - Coordenador autenticado.
-   - Código obrigatório.
-   - Código não duplicado.
+   - Codigo obrigatorio.
+   - Codigo nao duplicado.
 5. O model `PeriodoLetivo` valida o formato.
-6. O período é criado como inativo/encerrado.
+6. O periodo e criado como inativo/encerrado.
 7. O `PeriodoLetivoRepository` salva a lista no JSON.
 
-Ativação/encerramento:
+Ativacao/encerramento:
 
-1. Usuário precisa ter perfil `COORDENADOR`.
-2. A CLI lista os períodos existentes.
-3. A CLI solicita o ID do período.
-4. O controller busca o período.
-5. O status é alterado.
-6. A lista é salva novamente no JSON.
+1. Usuario precisa ter perfil `COORDENADOR`.
+2. A CLI lista os periodos existentes.
+3. A CLI solicita o ID do periodo.
+4. O controller busca o periodo.
+5. O status e alterado.
+6. A lista e salva novamente no JSON.
 
 ## 20. Testes Automatizados
 
-Os testes usam JUnit 5.
+Os testes usam JUnit 5 e ficam em `src/test/java`.
 
 ### `UsuarioAtribuicaoTest`
 
 Verifica:
 
-- `Aluno` possui perfil `ALUNO`.
-- `Professor` possui perfil `PROFESSOR`.
-- `Coordenador` possui perfil `COORDENADOR`.
-- `Administrador` possui perfil `ADMINISTRADOR`.
-- As classes concretas instanciam corretamente.
+- `Usuario` guarda o perfil informado sem depender de subclasses.
+- Perfil nulo e rejeitado.
 
 ### `AutenticacaoControllerLoginTest`
 
 Verifica:
 
-- Login por matrícula.
-- Login por e-mail.
-- Login com e-mail em caixa diferente.
-- Login com espaços ao redor do identificador.
-- Estado autenticado após login.
-- Usuário logado retornado corretamente.
-- Perfil retornado no login.
-- Campos obrigatórios.
-- Credenciais inválidas.
-- Usuário inativo.
+- Login por matricula.
+- Login por e-mail sem diferenciar maiusculas/minusculas.
+- Credenciais invalidas.
+- Usuario inativo.
 - Logout.
-- Lista nula no construtor.
-- Lista vazia.
-- Imutabilidade da lista de usuários.
+- Campos obrigatorios.
+- Imutabilidade da lista de usuarios.
 
 ### `AutenticacaoControllerCadastroTest`
 
 Verifica:
 
-- Administrador cadastra aluno.
-- Cadastro remove espaços de matrícula e e-mail.
-- Usuário cadastrado consegue fazer login.
-- Administrador cadastra professor.
-- Administrador cadastra coordenador.
-- Administrador cadastra outro administrador.
-- Usuário não autenticado não cadastra.
-- Aluno autenticado não cadastra.
-- Campos obrigatórios no cadastro.
-- Duplicidade de matrícula.
-- Duplicidade de e-mail.
-- E-mail duplicado ignorando maiúsculas/minúsculas.
+- Administrador cadastra usuario.
+- E-mail e gerado automaticamente a partir do nome e perfil.
+- Administrador usa dominio `admin.classroom.com`.
+- Usuario nao administrador nao cadastra.
+- Campos obrigatorios no cadastro.
+- Duplicidade de matricula.
+- Duplicidade de e-mail gerado.
 
 ### `CursoControllerTest`
 
 Verifica:
 
 - Administrador autenticado cadastra curso.
-- Usuário sem perfil administrador não cadastra curso.
-- Código duplicado não é permitido.
-- Lista retornada por `getCursos()` é imutável.
+- Usuario sem perfil administrador nao cadastra curso.
+- Nome duplicado nao e permitido.
+- Codigo duplicado nao e permitido.
+- Campos obrigatorios.
+- Lista retornada por `getCursos()` e imutavel.
+
+### `DisciplinaControllerTest`
+
+Verifica:
+
+- Coordenador cadastra disciplina para curso existente.
+- Curso inexistente impede cadastro de disciplina.
+- Usuario sem perfil coordenador nao cadastra disciplina.
+- Curso adicionado apos criar o controller tambem e reconhecido.
 
 ### `PeriodoLetivoControllerTest`
 
 Verifica:
 
-- Coordenador autenticado cadastra período letivo.
-- Usuário sem perfil coordenador não cadastra período.
-- Período pode ser ativado.
-- Período pode ser encerrado.
-- Período duplicado não é permitido.
-- Formato inválido é rejeitado.
+- Coordenador autenticado cadastra periodo letivo.
+- Usuario sem perfil coordenador nao cadastra periodo.
+- Periodo pode ser ativado.
+- Periodo pode ser encerrado.
+- Periodo duplicado nao e permitido.
+- Formato invalido e rejeitado.
+
+### `TesteMarkdownReport`
+
+Classe auxiliar de teste/relatorio. Ela nao e uma suite JUnit; e executada pelo `exec-maven-plugin` na fase `test`.
+
+Responsabilidades:
+
+- Ler `target/surefire-reports/TEST-*.xml`.
+- Somar testes, falhas, erros e ignorados.
+- Gerar o arquivo `TESTE.md`.
 
 ## 21. Requisitos Funcionais Atendidos Parcial ou Totalmente
 
-Com base no PDF do projeto, o estado atual cobre:
-
 ### RF01 - Cadastro de alunos, professores, coordenadores e administradores
 
-Implementado via `AutenticacaoController.cadastrarUsuario`, acessível pela CLI para administradores.
+Implementado via `AutenticacaoController.cadastrarUsuario`, acessivel pela CLI para administradores. Os tipos sao representados pelo campo `PerfilUsuario` em `Usuario`.
 
-### RF02 - Login com matrícula/e-mail e senha
+### RF02 - Login com matricula/e-mail e senha
 
 Implementado via `AutenticacaoController.login`.
 
-### RF03 - Validação de perfis e funcionalidades diferentes
+### RF03 - Validacao de perfis e funcionalidades diferentes
 
 Implementado em duas camadas:
 
-- CLI exibe opções conforme perfil.
-- Controllers bloqueiam ações para perfis não autorizados.
+- CLI exibe opcoes conforme perfil.
+- Controllers bloqueiam acoes para perfis nao autorizados.
 
-### RF04 - Impedir cadastro duplicado por matrícula ou e-mail
+### RF04 - Impedir cadastro duplicado por matricula ou e-mail
 
-Implementado em `AutenticacaoController`.
+Implementado em `AutenticacaoController`. Como o e-mail agora e gerado automaticamente, a duplicidade e verificada sobre o e-mail gerado.
 
 ### RF05 - Administrador cadastra cursos
 
@@ -828,84 +807,84 @@ Implementado em `CursoController`, `CursoRepository` e CLI.
 
 Implementado em `DisciplinaController` e CLI.
 
-### RF07 - Disciplina possui código, nome, carga horária, créditos e pré-requisitos opcionais
+### RF07 - Disciplina possui codigo, nome, carga horaria, creditos e pre-requisitos opcionais
 
-Implementado no model `Disciplina`.
+Implementado no model `Disciplina`, com validacao adicional de curso existente no controller.
 
-### RF08 - Coordenador cadastra períodos letivos
+### RF08 - Coordenador cadastra periodos letivos
 
 Implementado em `PeriodoLetivoController`, `PeriodoLetivoRepository` e CLI.
 
-### RF09 - Ativar ou encerrar período letivo
+### RF09 - Ativar ou encerrar periodo letivo
 
 Implementado por `ativarPeriodoLetivo` e `encerrarPeriodoLetivo`.
 
 ### RF10 a RF14 - Oferta de turmas
 
-Ainda não há fluxo completo. Existe apenas a classe de domínio `Turma` e a classe `BlocoHorario`, que servem como base para implementação futura.
+Ainda nao ha fluxo completo. Existe apenas a classe de dominio `Turma` e a classe `BlocoHorario`, que servem como base para implementacao futura.
 
-## 22. Limitações Atuais
+## 22. Limitacoes Atuais
 
-Alguns pontos ainda não estão implementados completamente:
+Alguns pontos ainda nao estao implementados completamente:
 
-- Não existe controller/repository/CLI para oferta de turmas.
-- `DisciplinaController` recebe `idCurso`, mas ainda não valida se o curso existe.
-- Não existe cadastro de professores associado a turmas.
-- Não existe regra de choque de horário para professor.
-- Não existe alteração ou cancelamento de turma pela CLI.
-- Não existe matrícula de alunos em turmas.
-- Não existe lista de espera.
-- Não existe frequência.
-- Não existe notas, média, recuperação ou situação final.
-- Não existe histórico acadêmico.
-- Não existe geração de relatórios.
-- A persistência JSON é manual e simples, baseada em texto/regex.
+- Nao existe controller/repository/CLI para oferta de turmas.
+- Nao existe cadastro de professores associado a turmas.
+- Nao existe regra de choque de horario para professor.
+- Nao existe alteracao ou cancelamento de turma pela CLI.
+- Nao existe matricula de alunos em turmas.
+- Nao existe lista de espera.
+- Nao existe frequencia.
+- Nao existe notas, media, recuperacao ou situacao final.
+- Nao existe historico academico.
+- A persistencia JSON e manual e simples, baseada em texto/regex.
 
-## 23. Pontos de Atenção Técnica
+## 23. Pontos de Atencao Tecnica
 
-### Persistência manual
+### Persistencia manual
 
-Os repositories fazem parsing manual de JSON. Isso é suficiente para o formato atual, mas pode ficar frágil se o arquivo crescer ou se objetos ficarem mais complexos.
-
-Como o enunciado limita o uso a Java, JUnit e padrões de projeto, a persistência manual foi mantida simples.
+Os repositories fazem parsing manual de JSON. Isso e suficiente para o formato atual, mas pode ficar fragil se o arquivo crescer ou se objetos ficarem mais complexos.
 
 ### Senhas em texto puro
 
-As senhas são salvas diretamente no JSON. Para um sistema real, isso não seria adequado. Como o projeto é acadêmico e simplificado, o foco atual está nas regras funcionais.
+As senhas sao salvas diretamente no JSON. Para um sistema real, isso nao seria adequado. Como o projeto e academico e simplificado, o foco atual esta nas regras funcionais.
 
-### Validação dupla de permissão
+### Validacao dupla de permissao
 
-A CLI esconde opções por perfil, mas os controllers também validam permissões. Isso é importante porque não basta esconder a opção na tela: a regra precisa estar protegida no fluxo de negócio.
+A CLI esconde opcoes por perfil, mas os controllers tambem validam permissoes. Isso e importante porque nao basta esconder a opcao na tela: a regra precisa estar protegida no fluxo de negocio.
 
-### Estado em memória
+### Estado em memoria
 
-Ao iniciar a CLI, os repositories carregam listas em memória. Depois de cada alteração, a CLI chama o repository correspondente para salvar no JSON.
+Ao iniciar a CLI, os repositories carregam listas em memoria. Depois de cada alteracao, a CLI chama o repository correspondente para salvar no JSON.
+
+### Relatorio de testes versionado
+
+O arquivo `TESTE.md` e reescrito sempre que `mvn test` ou `mvn clean test` termina com sucesso. Por isso, ele pode aparecer como modificado no Git apos uma nova execucao de testes, mesmo que o codigo nao tenha sido alterado.
 
 ## 24. Como Evoluir o Projeto
 
-Próximos passos naturais para a Release 1:
+Proximos passos naturais:
 
 1. Criar `TurmaController`.
 2. Criar `TurmaRepository`.
-3. Adicionar opções na CLI para ofertar, alterar e cancelar turmas.
-4. Validar se disciplina, período letivo e professor existem antes de criar turma.
-5. Validar que professor responsável possui perfil `PROFESSOR`.
-6. Implementar regra de choque de horário para professor.
-7. Criar testes para turma e blocos de horário.
-8. Melhorar validação de disciplina para exigir curso existente.
+3. Adicionar opcoes na CLI para ofertar, alterar e cancelar turmas.
+4. Validar se disciplina, periodo letivo e professor existem antes de criar turma.
+5. Validar que professor responsavel possui perfil `PROFESSOR`.
+6. Implementar regra de choque de horario para professor.
+7. Criar testes para turma e blocos de horario.
+8. Melhorar a interface do projeto, seja com uma CLI mais amigavel, uma interface desktop ou uma interface web.
 
-Próximos passos para releases futuras:
+Proximos passos para releases futuras:
 
 1. Consulta de turmas por aluno.
-2. Solicitação de matrícula.
+2. Solicitacao de matricula.
 3. Controle de vagas.
 4. Lista de espera.
-5. Frequência.
+5. Frequencia.
 6. Notas.
-7. Histórico.
-8. Relatórios.
+7. Historico.
+8. Relatorios academicos.
 
-## 25. Comandos Úteis
+## 25. Comandos Uteis
 
 Compilar:
 
@@ -919,10 +898,16 @@ Executar:
 mvn compile exec:java
 ```
 
-Rodar testes:
+Rodar testes e atualizar `TESTE.md`:
 
 ```powershell
 mvn test
+```
+
+Limpar e rodar todos os testes:
+
+```powershell
+mvn clean test
 ```
 
 Limpar arquivos gerados:
@@ -939,6 +924,6 @@ mvn package
 
 ## 26. Resumo Final
 
-O ClassRoomPB está estruturado em MVC, possui domínio acadêmico inicial, autenticação, controle de perfis, persistência local e testes automatizados para os fluxos principais já implementados.
+O ClassRoomPB esta estruturado em MVC, possui dominio academico inicial, autenticacao, controle de perfis, persistencia local e testes automatizados para os fluxos principais ja implementados.
 
-O sistema já atende boa parte do núcleo inicial da Release 1, especialmente cadastro/login, perfis, cursos, disciplinas e períodos letivos. A maior pendência da Release 1 é a implementação completa de turmas e suas validações associadas.
+O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos e relatorio automatico de testes. A maior pendencia funcional ainda e a implementacao completa de turmas e suas validacoes associadas.
