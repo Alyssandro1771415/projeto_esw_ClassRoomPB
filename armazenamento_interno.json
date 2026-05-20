@@ -3,6 +3,7 @@
     {
       "id": "48984402-e926-4d2f-9ca1-d88a9adff49e",
       "perfil": "ADMINISTRADOR",
+      "nome": "Administrador Padrao",
       "matricula": "0001",
       "email": "admin@classroompb.com",
       "senha": "admin123",
@@ -11,6 +12,7 @@
     {
       "id": "515185cd-0a64-4883-b209-2788daf5bb10",
       "perfil": "ALUNO",
+      "nome": "Lucas Aluno",
       "matricula": "2026001",
       "email": "lucas@classroompb.com",
       "senha": "123456",
@@ -19,6 +21,7 @@
     {
       "id": "d26c7fce-ae20-4941-b984-077c5f9e3577",
       "perfil": "COORDENADOR",
+      "nome": "Coordenador Curso",
       "matricula": "2026002",
       "email": "coordenador@classroompb.com",
       "senha": "123456",
@@ -36,6 +39,13 @@
       "preRequisitosIds": []
     }
   ],
-  "cursos": [],
-  "periodosLetivos": []
+  "cursos": [
+    {
+      "id": "0001",
+      "nome": "Engenharia de Software",
+      "codigo": "ESW"
+    }
+  ],
+  "periodosLetivos": [],
+  "turmas": []
 }

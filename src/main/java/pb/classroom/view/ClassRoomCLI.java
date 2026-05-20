@@ -1,5 +1,8 @@
 package pb.classroom.view;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -8,14 +11,18 @@ import pb.classroom.controller.AutenticacaoController;
 import pb.classroom.controller.CursoController;
 import pb.classroom.controller.DisciplinaController;
 import pb.classroom.controller.PeriodoLetivoController;
+import pb.classroom.controller.TurmaController;
+import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
+import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
 
 public class ClassRoomCLI {
@@ -25,10 +32,12 @@ public class ClassRoomCLI {
     private final CursoController cursoController;
     private final DisciplinaController disciplinaController;
     private final PeriodoLetivoController periodoLetivoController;
+    private final TurmaController turmaController;
     private final UsuarioRepository usuarioRepository;
     private final CursoRepository cursoRepository;
     private final DisciplinaRepository disciplinaRepository;
     private final PeriodoLetivoRepository periodoLetivoRepository;
+    private final TurmaRepository turmaRepository;
 
     public ClassRoomCLI() {
         this(
@@ -36,11 +45,18 @@ public class ClassRoomCLI {
                 new UsuarioRepository(),
                 new DisciplinaRepository(),
                 new CursoRepository(),
-                new PeriodoLetivoRepository());
+                new PeriodoLetivoRepository(),
+                new TurmaRepository());
     }
 
     ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
-        this(scanner, usuarioRepository, new DisciplinaRepository(), new CursoRepository(), new PeriodoLetivoRepository());
+        this(
+                scanner,
+                usuarioRepository,
+                new DisciplinaRepository(),
+                new CursoRepository(),
+                new PeriodoLetivoRepository(),
+                new TurmaRepository());
     }
 
     ClassRoomCLI(
@@ -48,12 +64,14 @@ public class ClassRoomCLI {
             UsuarioRepository usuarioRepository,
             DisciplinaRepository disciplinaRepository,
             CursoRepository cursoRepository,
-            PeriodoLetivoRepository periodoLetivoRepository) {
+            PeriodoLetivoRepository periodoLetivoRepository,
+            TurmaRepository turmaRepository) {
         this.scanner = scanner;
         this.usuarioRepository = usuarioRepository;
         this.disciplinaRepository = disciplinaRepository;
         this.cursoRepository = cursoRepository;
         this.periodoLetivoRepository = periodoLetivoRepository;
+        this.turmaRepository = turmaRepository;
         this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
         this.cursoController = new CursoController(
                 autenticacaoController,
@@ -65,6 +83,12 @@ public class ClassRoomCLI {
         this.periodoLetivoController = new PeriodoLetivoController(
                 autenticacaoController,
                 periodoLetivoRepository.carregarPeriodosLetivos());
+        this.turmaController = new TurmaController(
+                autenticacaoController,
+                turmaRepository.carregarTurmas(),
+                disciplinaController.getDisciplinas(),
+                periodoLetivoController.getPeriodosLetivos(),
+                autenticacaoController.getUsuarios());
     }
 
     public void iniciar() {
@@ -114,6 +138,18 @@ public class ClassRoomCLI {
                     break;
                 case "13":
                     listarUsuarios();
+                    break;
+                case "14":
+                    ofertarTurma();
+                    break;
+                case "15":
+                    listarTurmas();
+                    break;
+                case "16":
+                    alterarTurma();
+                    break;
+                case "17":
+                    cancelarTurma();
                     break;
                 case "0":
                     executando = false;
@@ -166,14 +202,20 @@ public class ClassRoomCLI {
                 System.out.println("10 - Listar períodos letivos");
                 System.out.println("11 - Ativar período letivo");
                 System.out.println("12 - Encerrar período letivo");
+                System.out.println("14 - Ofertar turma");
+                System.out.println("15 - Listar turmas");
+                System.out.println("16 - Alterar turma");
+                System.out.println("17 - Cancelar turma");
                 break;
             case PROFESSOR:
                 System.out.println("6 - Listar disciplinas");
                 System.out.println("10 - Listar períodos letivos");
+                System.out.println("15 - Listar turmas");
                 break;
             case ALUNO:
                 System.out.println("6 - Listar disciplinas");
                 System.out.println("10 - Listar períodos letivos");
+                System.out.println("15 - Listar turmas");
                 break;
             default:
                 break;
@@ -335,6 +377,118 @@ public class ClassRoomCLI {
         }
     }
 
+    private void ofertarTurma() {
+        if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            System.out.println("Apenas coordenadores podem gerenciar turmas.");
+            return;
+        }
+
+        exibirDisciplinasParaTurma();
+        listarPeriodosLetivos();
+        exibirProfessoresParaTurma();
+
+        String idDisciplina = lerLinha("ID da disciplina: ");
+        String idPeriodoLetivo = lerLinha("ID do período letivo: ");
+        String idProfessor = lerLinha("ID do professor responsavel: ");
+        String limiteVagasTexto = lerLinha("Limite de vagas: ");
+        String sala = lerLinha("Sala: ");
+        String dataInicioTexto = lerLinha("Data de início das aulas (AAAA-MM-DD): ");
+
+        try {
+            int limiteVagas = Integer.parseInt(limiteVagasTexto);
+            LocalDate dataInicio = LocalDate.parse(dataInicioTexto);
+            List<BlocoHorario> horarios = lerHorariosDaTurma();
+
+            Turma turma = turmaController.ofertarTurma(
+                    idDisciplina,
+                    idPeriodoLetivo,
+                    idProfessor,
+                    limiteVagas,
+                    sala,
+                    dataInicio,
+                    horarios);
+            turmaRepository.salvarTurmas(turmaController.getTurmas());
+
+            System.out.println("Turma ofertada com sucesso.");
+            exibirTurma(turma);
+        } catch (NumberFormatException e) {
+            System.out.println("Limite de vagas deve ser um número inteiro.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void listarTurmas() {
+        List<Turma> turmas = turmaController.getTurmas();
+        if (turmas.isEmpty()) {
+            System.out.println("Nenhuma turma cadastrada.");
+            return;
+        }
+
+        System.out.println("Turmas cadastradas:");
+        for (Turma turma : turmas) {
+            System.out.println();
+            exibirTurma(turma);
+        }
+    }
+
+    private void alterarTurma() {
+        if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            System.out.println("Apenas coordenadores podem gerenciar turmas.");
+            return;
+        }
+
+        listarTurmas();
+        exibirProfessoresParaTurma();
+        String idTurma = lerLinha("ID da turma: ");
+        String idProfessor = lerLinha("Novo ID do professor responsavel: ");
+        String limiteVagasTexto = lerLinha("Novo limite de vagas: ");
+        String sala = lerLinha("Nova sala: ");
+        String dataInicioTexto = lerLinha("Nova data de início das aulas (AAAA-MM-DD): ");
+
+        try {
+            int limiteVagas = Integer.parseInt(limiteVagasTexto);
+            LocalDate dataInicio = LocalDate.parse(dataInicioTexto);
+            List<BlocoHorario> horarios = lerHorariosDaTurma();
+
+            Turma turma = turmaController.alterarTurma(
+                    idTurma,
+                    idProfessor,
+                    limiteVagas,
+                    sala,
+                    dataInicio,
+                    horarios);
+            turmaRepository.salvarTurmas(turmaController.getTurmas());
+
+            System.out.println("Turma alterada com sucesso.");
+            exibirTurma(turma);
+        } catch (NumberFormatException e) {
+            System.out.println("Limite de vagas deve ser um número inteiro.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void cancelarTurma() {
+        if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            System.out.println("Apenas coordenadores podem gerenciar turmas.");
+            return;
+        }
+
+        listarTurmas();
+        String idTurma = lerLinha("ID da turma: ");
+
+        try {
+            Turma turma = turmaController.cancelarTurma(idTurma);
+            turmaRepository.salvarTurmas(turmaController.getTurmas());
+
+            System.out.println("Turma cancelada com sucesso.");
+            exibirTurma(turma);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     private void cadastrarCurso() {
         if (!autenticacaoController.isAutenticado()
                 || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.ADMINISTRADOR) {
@@ -472,6 +626,77 @@ public class ClassRoomCLI {
             System.out.println(curso.getId() + " - " + curso.getNome() + " - " + formatarValorOpcional(curso.getCodigo()));
         }
         System.out.println();
+    }
+
+    private void exibirDisciplinasParaTurma() {
+        List<Disciplina> disciplinas = disciplinaController.getDisciplinas();
+        if (disciplinas.isEmpty()) {
+            System.out.println("Nenhuma disciplina cadastrada para ofertar turma.");
+            System.out.println();
+            return;
+        }
+
+        System.out.println("Disciplinas disponíveis para turma:");
+        for (Disciplina disciplina : disciplinas) {
+            System.out.println(disciplina.getId() + " - " + disciplina.getCodigo() + " - " + disciplina.getNome());
+        }
+        System.out.println();
+    }
+
+    private void exibirProfessoresParaTurma() {
+        System.out.println("Professores disponíveis:");
+        boolean encontrouProfessor = false;
+        for (Usuario usuario : autenticacaoController.getUsuarios()) {
+            if (usuario.getPerfil() == PerfilUsuario.PROFESSOR) {
+                encontrouProfessor = true;
+                System.out.println(usuario.getId() + " - " + usuario.getNome() + " - " + usuario.getEmail());
+            }
+        }
+        if (!encontrouProfessor) {
+            System.out.println("Nenhum professor cadastrado.");
+        }
+        System.out.println();
+    }
+
+    private List<BlocoHorario> lerHorariosDaTurma() {
+        String quantidadeTexto = lerLinha("Quantidade de blocos de horário: ");
+        int quantidade = Integer.parseInt(quantidadeTexto);
+        List<BlocoHorario> horarios = new ArrayList<>();
+
+        for (int i = 1; i <= quantidade; i++) {
+            System.out.println("Bloco " + i + ":");
+            int dia = Integer.parseInt(lerLinha("Dia da semana (1=segunda, 7=domingo): "));
+            LocalTime inicio = LocalTime.parse(lerLinha("Hora início (HH:mm): "));
+            LocalTime fim = LocalTime.parse(lerLinha("Hora fim (HH:mm): "));
+            horarios.add(new BlocoHorario(DayOfWeek.of(dia), inicio, fim));
+        }
+
+        return horarios;
+    }
+
+    private void exibirTurma(Turma turma) {
+        System.out.println("ID: " + turma.getId());
+        System.out.println("ID da disciplina: " + turma.getIdDisciplina());
+        System.out.println("ID do periodo letivo: " + turma.getIdPeriodoLetivo());
+        System.out.println("ID do professor: " + turma.getIdProfessor());
+        System.out.println("Limite de vagas: " + turma.getLimiteVagas());
+        System.out.println("Sala: " + turma.getSala());
+        System.out.println("Data de início: " + turma.getDataInicioAulas());
+        System.out.println("Horários: " + formatarHorarios(turma.getHorarios()));
+        System.out.println("Status: " + (turma.isCancelada() ? "cancelada" : "ativa"));
+    }
+
+    private String formatarHorarios(List<BlocoHorario> horarios) {
+        List<String> textos = new ArrayList<>();
+        for (BlocoHorario horario : horarios) {
+            textos.add(horario.getDiaSemana() + " " + horario.getHoraInicio() + "-" + horario.getHoraFim());
+        }
+        return String.join(", ", textos);
+    }
+
+    private boolean usuarioLogadoPossuiPerfil(PerfilUsuario perfil) {
+        return autenticacaoController.isAutenticado()
+                && autenticacaoController.getUsuarioLogado().getPerfil() == perfil;
     }
 
     private List<String> converterTextoParaLista(String texto) {

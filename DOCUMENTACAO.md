@@ -97,6 +97,7 @@ Controllers atuais:
 - `CursoController`
 - `DisciplinaController`
 - `PeriodoLetivoController`
+- `TurmaController`
 
 ### Camada `repository`
 
@@ -108,6 +109,7 @@ Repositories atuais:
 - `CursoRepository`
 - `DisciplinaRepository`
 - `PeriodoLetivoRepository`
+- `TurmaRepository`
 - `ArmazenamentoJson`
 
 ### Camada `view`
@@ -385,7 +387,7 @@ Atributos:
 - `horarios`
 - `cancelada`
 
-Observacao: a classe `Turma` existe como base de dominio, mas ainda nao ha controller, repository ou menu completo para oferta de turmas.
+Essa classe e usada pelo fluxo de oferta de turmas (`RF10` a `RF14`).
 
 ## 11. Classes do Pacote `pb.classroom.controller`
 
@@ -491,6 +493,30 @@ Regras:
 - So e possivel ativar ou encerrar periodo existente.
 - `getPeriodosLetivos()` retorna lista imutavel.
 
+### `TurmaController`
+
+Controla a oferta, alteracao e cancelamento de turmas.
+
+Principais metodos:
+
+- `ofertarTurma(String idDisciplina, String idPeriodoLetivo, String idProfessor, int limiteVagas, String sala, LocalDate dataInicioAulas, List<BlocoHorario> horarios)`
+- `alterarTurma(String idTurma, String idProfessor, int limiteVagas, String sala, LocalDate dataInicioAulas, List<BlocoHorario> horarios)`
+- `cancelarTurma(String idTurma)`
+- `getTurmas()`
+
+Regras:
+
+- Apenas coordenador autenticado pode gerenciar turmas.
+- A disciplina informada precisa existir.
+- O periodo letivo informado precisa existir.
+- O professor responsavel precisa existir e ter perfil `PROFESSOR`.
+- A turma precisa ter limite de vagas positivo, sala e ao menos um horario.
+- O sistema impede choque de horario para o mesmo professor.
+- Turmas com professores diferentes podem ter o mesmo horario.
+- Horarios que apenas encostam, como `08:00-10:00` e `10:00-12:00`, sao permitidos.
+- Alteracao e cancelamento so sao permitidos antes da data de inicio das aulas.
+- `getTurmas()` retorna lista imutavel.
+
 ## 12. Classes do Pacote `pb.classroom.repository`
 
 ### `ArmazenamentoJson`
@@ -501,7 +527,7 @@ Responsabilidades:
 
 - Extrair arrays por nome de campo.
 - Retornar `[]` quando um campo ainda nao existe.
-- Montar o documento completo de persistencia com usuarios, disciplinas, cursos e periodos letivos.
+- Montar o documento completo de persistencia com usuarios, disciplinas, cursos, periodos letivos e turmas.
 - Validar se os conteudos salvos como arrays comecam com `[` e terminam com `]`.
 
 Observacao tecnica: a implementacao usa manipulacao manual de texto e expressoes regulares. Funciona para a estrutura atual simples, mas nao substitui uma biblioteca JSON completa.
@@ -516,7 +542,7 @@ Responsabilidades:
 - Criar administrador inicial se nao houver arquivo ou lista de usuarios.
 - Converter JSON em objetos `Usuario`.
 - Converter objetos `Usuario` em JSON.
-- Preservar disciplinas, cursos e periodos letivos ao salvar usuarios.
+- Preservar disciplinas, cursos, periodos letivos e turmas ao salvar usuarios.
 
 ### `CursoRepository`
 
@@ -527,7 +553,7 @@ Responsabilidades:
 - Ler o array `cursos`.
 - Converter JSON em objetos `Curso`.
 - Converter cursos em JSON.
-- Preservar usuarios, disciplinas e periodos letivos ao salvar cursos.
+- Preservar usuarios, disciplinas, periodos letivos e turmas ao salvar cursos.
 
 ### `DisciplinaRepository`
 
@@ -539,7 +565,7 @@ Responsabilidades:
 - Converter JSON em objetos `Disciplina`.
 - Converter disciplinas em JSON.
 - Salvar pre-requisitos como lista de IDs.
-- Preservar usuarios, cursos e periodos letivos ao salvar disciplinas.
+- Preservar usuarios, cursos, periodos letivos e turmas ao salvar disciplinas.
 
 ### `PeriodoLetivoRepository`
 
@@ -550,7 +576,19 @@ Responsabilidades:
 - Ler o array `periodosLetivos`.
 - Converter JSON em objetos `PeriodoLetivo`.
 - Converter periodos em JSON.
-- Preservar usuarios, disciplinas e cursos ao salvar periodos.
+- Preservar usuarios, disciplinas, cursos e turmas ao salvar periodos.
+
+### `TurmaRepository`
+
+Carrega e salva turmas.
+
+Responsabilidades:
+
+- Ler o array `turmas`.
+- Converter JSON em objetos `Turma`.
+- Converter turmas em JSON.
+- Salvar horarios como strings no formato `DIA|HH:mm|HH:mm`.
+- Preservar usuarios, disciplinas, cursos e periodos letivos ao salvar turmas.
 
 ## 13. Classe `ClassRoomCLI`
 
@@ -582,6 +620,10 @@ Fluxos implementados:
 - Listagem de periodos letivos.
 - Ativacao de periodo letivo.
 - Encerramento de periodo letivo.
+- Oferta de turma.
+- Listagem de turmas.
+- Alteracao de turma.
+- Cancelamento de turma.
 
 ## 14. Menu da Aplicacao
 
@@ -601,6 +643,10 @@ Opcoes existentes no codigo:
 11 - Ativar periodo letivo
 12 - Encerrar periodo letivo
 13 - Listar usuarios
+14 - Ofertar turma
+15 - Listar turmas
+16 - Alterar turma
+17 - Cancelar turma
 0  - Sair
 ```
 
@@ -702,7 +748,50 @@ Ativacao/encerramento:
 5. O status e alterado.
 6. A lista e salva novamente no JSON.
 
-## 20. Testes Automatizados
+## 20. Fluxo de Oferta, Alteracao e Cancelamento de Turmas
+
+Oferta:
+
+1. Usuario precisa estar autenticado.
+2. Usuario precisa ter perfil `COORDENADOR`.
+3. A CLI exibe disciplinas, periodos letivos e professores disponiveis.
+4. A CLI solicita:
+   - ID da disciplina.
+   - ID do periodo letivo.
+   - ID do professor responsavel.
+   - Limite de vagas.
+   - Sala.
+   - Data de inicio das aulas.
+   - Um ou mais blocos de horario.
+5. O `TurmaController` valida:
+   - Coordenador autenticado.
+   - Disciplina existente.
+   - Periodo letivo existente.
+   - Professor existente e com perfil `PROFESSOR`.
+   - Ausencia de choque de horario para o professor.
+6. O model `Turma` valida professor responsavel, limite de vagas, sala, data e horarios.
+7. O `TurmaRepository` salva a lista no JSON.
+
+Alteracao:
+
+1. Usuario precisa ter perfil `COORDENADOR`.
+2. A CLI lista as turmas existentes.
+3. A CLI solicita o ID da turma e os novos dados.
+4. O controller valida se a turma existe.
+5. A alteracao so e permitida antes da data de inicio das aulas.
+6. O controller revalida professor responsavel e choque de horario.
+7. A lista e salva novamente no JSON.
+
+Cancelamento:
+
+1. Usuario precisa ter perfil `COORDENADOR`.
+2. A CLI lista as turmas existentes.
+3. A CLI solicita o ID da turma.
+4. O controller valida se a turma existe.
+5. O cancelamento so e permitido antes da data de inicio das aulas.
+6. A turma e marcada como cancelada e a lista e salva no JSON.
+
+## 21. Testes Automatizados
 
 Os testes usam JUnit 5 e ficam em `src/test/java`.
 
@@ -768,6 +857,28 @@ Verifica:
 - Periodo duplicado nao e permitido.
 - Formato invalido e rejeitado.
 
+### `TurmaControllerTest`
+
+Verifica:
+
+- Coordenador oferta turma para disciplina e periodo existentes.
+- Usuario sem perfil coordenador nao oferta turma.
+- Disciplina ou periodo inexistente impedem oferta de turma.
+- Turma exige professor, limite de vagas, sala e horario validos.
+- Choque de horario para o mesmo professor e impedido.
+- Professor diferente ou horario sem sobreposicao e permitido.
+- Professor responsavel precisa existir e ter perfil `PROFESSOR`.
+- Coordenador altera e cancela turma antes do inicio das aulas.
+- Turma nao pode ser alterada ou cancelada apos o inicio das aulas.
+- Turma inexistente nao pode ser alterada ou cancelada.
+
+### `TurmaRepositoryTest`
+
+Verifica:
+
+- Turmas sao salvas e carregadas com horarios e status de cancelamento.
+- Salvar turmas preserva os demais arrays do armazenamento.
+
 ### `TesteMarkdownReport`
 
 Classe auxiliar de teste/relatorio. Ela nao e uma suite JUnit; e executada pelo `exec-maven-plugin` na fase `test`.
@@ -778,7 +889,7 @@ Responsabilidades:
 - Somar testes, falhas, erros e ignorados.
 - Gerar o arquivo `TESTE.md`.
 
-## 21. Requisitos Funcionais Atendidos Parcial ou Totalmente
+## 22. Requisitos Funcionais Atendidos Parcial ou Totalmente
 
 ### RF01 - Cadastro de alunos, professores, coordenadores e administradores
 
@@ -819,18 +930,30 @@ Implementado em `PeriodoLetivoController`, `PeriodoLetivoRepository` e CLI.
 
 Implementado por `ativarPeriodoLetivo` e `encerrarPeriodoLetivo`.
 
-### RF10 a RF14 - Oferta de turmas
+### RF10 - Coordenador oferta turmas
 
-Ainda nao ha fluxo completo. Existe apenas a classe de dominio `Turma` e a classe `BlocoHorario`, que servem como base para implementacao futura.
+Implementado em `TurmaController`, `TurmaRepository` e CLI. A turma precisa estar associada a uma disciplina existente e a um periodo letivo existente.
 
-## 22. Limitacoes Atuais
+### RF11 - Turma possui professor, vagas, horario e sala
+
+Implementado no model `Turma` e no fluxo de oferta. A turma exige professor responsavel, limite de vagas positivo, sala e ao menos um `BlocoHorario`.
+
+### RF12 - Impedir choque de horario para professor
+
+Implementado em `TurmaController`. O sistema rejeita turmas sobrepostas para o mesmo professor no mesmo dia.
+
+### RF13 - Impedir oferta sem professor responsavel
+
+Implementado em `TurmaController` e `Turma`. O professor precisa ser informado, existir e possuir perfil `PROFESSOR`.
+
+### RF14 - Alterar ou cancelar turma antes do inicio das aulas
+
+Implementado em `TurmaController` e CLI. A alteracao e o cancelamento sao bloqueados quando a data atual nao e anterior a `dataInicioAulas`.
+
+## 23. Limitacoes Atuais
 
 Alguns pontos ainda nao estao implementados completamente:
 
-- Nao existe controller/repository/CLI para oferta de turmas.
-- Nao existe cadastro de professores associado a turmas.
-- Nao existe regra de choque de horario para professor.
-- Nao existe alteracao ou cancelamento de turma pela CLI.
 - Nao existe matricula de alunos em turmas.
 - Nao existe lista de espera.
 - Nao existe frequencia.
@@ -838,7 +961,7 @@ Alguns pontos ainda nao estao implementados completamente:
 - Nao existe historico academico.
 - A persistencia JSON e manual e simples, baseada em texto/regex.
 
-## 23. Pontos de Atencao Tecnica
+## 24. Pontos de Atencao Tecnica
 
 ### Persistencia manual
 
@@ -860,18 +983,14 @@ Ao iniciar a CLI, os repositories carregam listas em memoria. Depois de cada alt
 
 O arquivo `TESTE.md` e reescrito sempre que `mvn test` ou `mvn clean test` termina com sucesso. Por isso, ele pode aparecer como modificado no Git apos uma nova execucao de testes, mesmo que o codigo nao tenha sido alterado.
 
-## 24. Como Evoluir o Projeto
+## 25. Como Evoluir o Projeto
 
 Proximos passos naturais:
 
-1. Criar `TurmaController`.
-2. Criar `TurmaRepository`.
-3. Adicionar opcoes na CLI para ofertar, alterar e cancelar turmas.
-4. Validar se disciplina, periodo letivo e professor existem antes de criar turma.
-5. Validar que professor responsavel possui perfil `PROFESSOR`.
-6. Implementar regra de choque de horario para professor.
-7. Criar testes para turma e blocos de horario.
-8. Melhorar a interface do projeto, seja com uma CLI mais amigavel, uma interface desktop ou uma interface web.
+1. Melhorar a interface do projeto, seja com uma CLI mais amigavel, uma interface desktop ou uma interface web.
+2. Exibir nomes de disciplina, periodo e professor nas listagens de turmas, alem dos IDs.
+3. Adicionar filtros de turma por disciplina, professor ou periodo letivo.
+4. Criar testes de integracao de CLI para os principais fluxos.
 
 Proximos passos para releases futuras:
 
@@ -884,7 +1003,7 @@ Proximos passos para releases futuras:
 7. Historico.
 8. Relatorios academicos.
 
-## 25. Comandos Uteis
+## 26. Comandos Uteis
 
 Compilar:
 
@@ -922,8 +1041,8 @@ Gerar pacote:
 mvn package
 ```
 
-## 26. Resumo Final
+## 27. Resumo Final
 
 O ClassRoomPB esta estruturado em MVC, possui dominio academico inicial, autenticacao, controle de perfis, persistencia local e testes automatizados para os fluxos principais ja implementados.
 
-O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos e relatorio automatico de testes. A maior pendencia funcional ainda e a implementacao completa de turmas e suas validacoes associadas.
+O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos, oferta de turmas, validacao de professor responsavel, choque de horario, alteracao/cancelamento antes do inicio das aulas e relatorio automatico de testes.
