@@ -1,6 +1,52 @@
+# Build outputs
 target/
+out/
+bin/
+build/
+
+# Java artifacts
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Maven local repository and generated files
+.m2/
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+dependency-reduced-pom.xml
+
+# Test and coverage reports
+surefire-reports/
+failsafe-reports/
+jacoco.exec
+coverage/
+
+# IDEs and editors
 .idea/
 *.iml
+*.iws
+*.ipr
 .classpath
 .project
 .settings/
+.factorypath
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
