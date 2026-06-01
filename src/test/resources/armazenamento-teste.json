@@ -1,0 +1,66 @@
+{
+  "usuarios": [
+    {
+      "id": "admin-1",
+      "perfil": "ADMINISTRADOR",
+      "nome": "Administrador Padrao",
+      "matricula": "0001",
+      "email": "admin@classroompb.com",
+      "senha": "admin123",
+      "ativo": true
+    },
+    {
+      "id": "coord-1",
+      "perfil": "COORDENADOR",
+      "nome": "Coordenador Teste",
+      "matricula": "2026002",
+      "email": "coordenador@classroompb.com",
+      "senha": "123456",
+      "ativo": true
+    },
+    {
+      "id": "prof-1",
+      "perfil": "PROFESSOR",
+      "nome": "Professor Teste",
+      "matricula": "2026100",
+      "email": "professor@classroompb.com",
+      "senha": "123456",
+      "ativo": true
+    },
+    {
+      "id": "aluno-1",
+      "perfil": "ALUNO",
+      "nome": "Aluno Teste",
+      "matricula": "2026200",
+      "email": "aluno@classroompb.com",
+      "senha": "123456",
+      "ativo": true
+    }
+  ],
+  "disciplinas": [
+    {
+      "id": "disc-1",
+      "codigo": "ESW101",
+      "nome": "Engenharia de Software",
+      "cargaHoraria": 60,
+      "creditos": 4,
+      "idCurso": "curso-1",
+      "preRequisitosIds": []
+    }
+  ],
+  "cursos": [
+    {
+      "id": "curso-1",
+      "nome": "Ciencia da Computacao",
+      "codigo": "CC"
+    }
+  ],
+  "periodosLetivos": [
+    {
+      "id": "per-1",
+      "codigo": "2026.1",
+      "ativo": false
+    }
+  ],
+  "turmas": []
+}
