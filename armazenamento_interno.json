@@ -26,6 +26,15 @@
       "email": "coordenador@classroompb.com",
       "senha": "123456",
       "ativo": true
+    },
+    {
+      "id": "5346a8a0-4afc-4f09-9a2f-1359084a9c43",
+      "perfil": "PROFESSOR",
+      "nome": "Professor Teste",
+      "matricula": "2026100",
+      "email": "professor.teste@professor.classroom.com",
+      "senha": "123456",
+      "ativo": true
     }
   ],
   "disciplinas": [
@@ -46,6 +55,26 @@
       "codigo": "ESW"
     }
   ],
-  "periodosLetivos": [],
-  "turmas": []
+  "periodosLetivos": [
+    {
+      "id": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
+      "codigo": "2026.2",
+      "ativo": true
+    }
+  ],
+  "turmas": [
+    {
+      "id": "f6d19373-e299-492e-a0ea-2112758fefb5",
+      "idDisciplina": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
+      "idPeriodoLetivo": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
+      "idProfessor": "5346a8a0-4afc-4f09-9a2f-1359084a9c43",
+      "limiteVagas": 30,
+      "sala": "Sala 101",
+      "dataInicioAulas": "2626-09-01",
+      "horarios": [
+        "MONDAY|08:00|10:00"
+      ],
+      "cancelada": false
+    }
+  ]
 }

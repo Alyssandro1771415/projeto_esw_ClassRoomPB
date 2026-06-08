@@ -636,7 +636,7 @@ Opcoes existentes no codigo:
 4  - Cadastrar usuario
 5  - Cadastrar disciplina
 6  - Listar disciplinas
-7  - Cadastrar curso
+7  - Listar turmas
 8  - Listar cursos
 9  - Cadastrar periodo letivo
 10 - Listar periodos letivos
@@ -644,9 +644,9 @@ Opcoes existentes no codigo:
 12 - Encerrar periodo letivo
 13 - Listar usuarios
 14 - Ofertar turma
-15 - Listar turmas
 16 - Alterar turma
 17 - Cancelar turma
+18 - Cadastrar curso
 0  - Sair
 ```
 

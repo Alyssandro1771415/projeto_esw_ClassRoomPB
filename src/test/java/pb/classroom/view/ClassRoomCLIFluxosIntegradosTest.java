@@ -3,22 +3,24 @@ package pb.classroom.view;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pb.classroom.model.Turma;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
-import pb.classroom.model.Turma;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
 
 import java.io.ByteArrayInputStream;
-import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Scanner;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("ClassRoomCLI - fluxos integrados da release 1")
@@ -41,7 +43,7 @@ class ClassRoomCLIFluxosIntegradosTest {
                 "",
                 "13",
                 "",
-                "7",
+                "18",
                 "Sistemas de Informacao",
                 "SI",
                 "",
@@ -96,7 +98,7 @@ class ClassRoomCLIFluxosIntegradosTest {
                 "08:00",
                 "10:00",
                 "",
-                "15",
+                "7",
                 "",
                 "0");
 
@@ -118,11 +120,36 @@ class ClassRoomCLIFluxosIntegradosTest {
                 "",
                 "10",
                 "",
-                "15",
+                "7",
                 "",
                 "0");
 
         assertTrue(saida.contains("Login realizado com sucesso"));
+    }
+
+    @Test
+    @DisplayName("RF15: aluno consulta disciplinas e turmas disponiveis")
+    void alunoConsultaDisciplinasETurmasDisponiveis() throws Exception {
+        Path arquivo = criarArquivoRf15();
+        String saida = executar(
+                arquivo,
+                "1",
+                "aluno@classroompb.com",
+                "123456",
+                "",
+                "6",
+                "",
+                "7",
+                "",
+                "0");
+
+        assertTrue(saida.contains("Disciplinas disponíveis:"));
+        assertTrue(saida.contains("Turmas disponíveis:"));
+        assertTrue(saida.contains("ESW101"));
+        assertTrue(saida.contains("turma-ativa"));
+        assertFalse(saida.contains("ESW102"));
+        assertFalse(saida.contains("turma-cancelada"));
+        assertFalse(saida.contains("turma-encerrada"));
     }
 
     @Test
@@ -221,7 +248,7 @@ class ClassRoomCLIFluxosIntegradosTest {
                 "",
                 "10",
                 "",
-                "15",
+                "7",
                 "",
                 "2",
                 "",
@@ -241,7 +268,7 @@ class ClassRoomCLIFluxosIntegradosTest {
                 "0001",
                 "senha-errada",
                 "",
-                "7",
+                "18",
                 "",
                 "5",
                 "",
@@ -255,6 +282,56 @@ class ClassRoomCLIFluxosIntegradosTest {
         try (InputStream in = getClass().getResourceAsStream("/armazenamento-teste.json")) {
             Files.copy(in, arquivo);
         }
+        return arquivo;
+    }
+
+    private Path criarArquivoRf15() throws Exception {
+        Path arquivo = tempDir.resolve("armazenamento-rf15.json");
+        Files.writeString(
+                arquivo,
+                "{\n"
+                        + "  \"usuarios\": [\n"
+                        + "    {\"id\":\"prof-1\",\"perfil\":\"PROFESSOR\",\"nome\":\"Professor Teste\","
+                        + "\"matricula\":\"2026100\",\"email\":\"professor@classroompb.com\","
+                        + "\"senha\":\"123456\",\"ativo\":true},\n"
+                        + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Teste\","
+                        + "\"matricula\":\"2026200\",\"email\":\"aluno@classroompb.com\","
+                        + "\"senha\":\"123456\",\"ativo\":true}\n"
+                        + "  ],\n"
+                        + "  \"disciplinas\": [\n"
+                        + "    {\"id\":\"disc-1\",\"codigo\":\"ESW101\",\"nome\":\"Disponivel\","
+                        + "\"cargaHoraria\":60,\"creditos\":4,\"idCurso\":\"curso-1\","
+                        + "\"preRequisitosIds\":[]},\n"
+                        + "    {\"id\":\"disc-2\",\"codigo\":\"ESW102\",\"nome\":\"Indisponivel\","
+                        + "\"cargaHoraria\":60,\"creditos\":4,\"idCurso\":\"curso-1\","
+                        + "\"preRequisitosIds\":[]}\n"
+                        + "  ],\n"
+                        + "  \"cursos\": [\n"
+                        + "    {\"id\":\"curso-1\",\"nome\":\"Ciencia da Computacao\",\"codigo\":\"CC\"}\n"
+                        + "  ],\n"
+                        + "  \"periodosLetivos\": [\n"
+                        + "    {\"id\":\"per-ativo\",\"codigo\":\"2026.2\",\"ativo\":true},\n"
+                        + "    {\"id\":\"per-encerrado\",\"codigo\":\"2026.1\",\"ativo\":false}\n"
+                        + "  ],\n"
+                        + "  \"turmas\": [\n"
+                        + "    {\"id\":\"turma-ativa\",\"idDisciplina\":\"disc-1\","
+                        + "\"idPeriodoLetivo\":\"per-ativo\",\"idProfessor\":\"prof-1\","
+                        + "\"limiteVagas\":30,\"sala\":\"Sala 101\","
+                        + "\"dataInicioAulas\":\"2026-08-01\","
+                        + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false},\n"
+                        + "    {\"id\":\"turma-cancelada\",\"idDisciplina\":\"disc-2\","
+                        + "\"idPeriodoLetivo\":\"per-ativo\",\"idProfessor\":\"prof-1\","
+                        + "\"limiteVagas\":30,\"sala\":\"Sala 102\","
+                        + "\"dataInicioAulas\":\"2026-08-01\","
+                        + "\"horarios\":[\"TUESDAY|08:00|10:00\"],\"cancelada\":true},\n"
+                        + "    {\"id\":\"turma-encerrada\",\"idDisciplina\":\"disc-2\","
+                        + "\"idPeriodoLetivo\":\"per-encerrado\",\"idProfessor\":\"prof-1\","
+                        + "\"limiteVagas\":30,\"sala\":\"Sala 103\","
+                        + "\"dataInicioAulas\":\"2026-08-01\","
+                        + "\"horarios\":[\"WEDNESDAY|08:00|10:00\"],\"cancelada\":false}\n"
+                        + "  ]\n"
+                        + "}\n",
+                StandardCharsets.UTF_8);
         return arquivo;
     }
 

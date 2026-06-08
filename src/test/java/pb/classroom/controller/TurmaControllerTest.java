@@ -345,6 +345,79 @@ class TurmaControllerTest {
                         () -> turmaController.cancelarTurma("turma-inexistente")));
     }
 
+    @Test
+    @DisplayName("RF15: aluno consulta apenas turmas e disciplinas disponiveis")
+    void alunoConsultaApenasTurmasEDisciplinasDisponiveis() {
+        Disciplina disciplinaSemOfertaDisponivel = new Disciplina(
+                "disc-2",
+                "ESW102",
+                "Requisitos de Software",
+                60,
+                4,
+                disciplina.getIdCurso(),
+                List.of());
+        PeriodoLetivo periodoEncerrado = new PeriodoLetivo("periodo-encerrado", "2026.1", false);
+        Turma turmaDisponivel = criarTurma(disciplina.getId(), periodoLetivo.getId(), false);
+        Turma turmaCancelada = criarTurma(disciplinaSemOfertaDisponivel.getId(), periodoLetivo.getId(), true);
+        Turma turmaPeriodoEncerrado = criarTurma(
+                disciplinaSemOfertaDisponivel.getId(),
+                periodoEncerrado.getId(),
+                false);
+        turmaController = new TurmaController(
+                autenticacaoController,
+                List.of(turmaDisponivel, turmaCancelada, turmaPeriodoEncerrado),
+                List.of(disciplina, disciplinaSemOfertaDisponivel),
+                List.of(periodoLetivo, periodoEncerrado),
+                autenticacaoController.getUsuarios());
+        autenticacaoController.login("A001", SENHA);
+
+        List<Turma> turmasDisponiveis = turmaController.consultarTurmasDisponiveisParaAluno();
+        List<Disciplina> disciplinasDisponiveis = turmaController.consultarDisciplinasDisponiveisParaAluno();
+
+        assertAll(
+                () -> assertEquals(List.of(turmaDisponivel), turmasDisponiveis),
+                () -> assertEquals(List.of(disciplina), disciplinasDisponiveis),
+                () -> assertThrows(UnsupportedOperationException.class, () -> turmasDisponiveis.add(turmaCancelada)),
+                () -> assertThrows(
+                        UnsupportedOperationException.class,
+                        () -> disciplinasDisponiveis.add(disciplinaSemOfertaDisponivel)));
+    }
+
+    @Test
+    @DisplayName("RF15: somente aluno autenticado consulta disponiveis")
+    void somenteAlunoAutenticadoConsultaDisponiveis() {
+        assertAll(
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> turmaController.consultarTurmasDisponiveisParaAluno()),
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> turmaController.consultarDisciplinasDisponiveisParaAluno()));
+
+        autenticacaoController.login("C001", SENHA);
+
+        assertAll(
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> turmaController.consultarTurmasDisponiveisParaAluno()),
+                () -> assertThrows(
+                        IllegalArgumentException.class,
+                        () -> turmaController.consultarDisciplinasDisponiveisParaAluno()));
+    }
+
+    private Turma criarTurma(String idDisciplina, String idPeriodoLetivo, boolean cancelada) {
+        return new Turma(
+                "turma-" + idDisciplina + "-" + idPeriodoLetivo + "-" + cancelada,
+                idDisciplina,
+                idPeriodoLetivo,
+                professor.getId(),
+                30,
+                "Sala 101",
+                LocalDate.now().plusDays(10),
+                horarios("08:00", "10:00"),
+                cancelada);
+    }
+
     private List<BlocoHorario> horarios(String inicio, String fim) {
         return List.of(new BlocoHorario(DayOfWeek.MONDAY, LocalTime.parse(inicio), LocalTime.parse(fim)));
     }

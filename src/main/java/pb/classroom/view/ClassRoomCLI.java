@@ -119,7 +119,7 @@ public class ClassRoomCLI {
                     listarDisciplinas();
                     break;
                 case "7":
-                    cadastrarCurso();
+                    listarTurmas();
                     break;
                 case "8":
                     listarCursos();
@@ -142,14 +142,14 @@ public class ClassRoomCLI {
                 case "14":
                     ofertarTurma();
                     break;
-                case "15":
-                    listarTurmas();
-                    break;
                 case "16":
                     alterarTurma();
                     break;
                 case "17":
                     cancelarTurma();
+                    break;
+                case "18":
+                    cadastrarCurso();
                     break;
                 case "0":
                     executando = false;
@@ -190,32 +190,32 @@ public class ClassRoomCLI {
         switch (perfil) {
             case ADMINISTRADOR:
                 System.out.println("4 - Cadastrar usuário");
-                System.out.println("7 - Cadastrar curso");
                 System.out.println("8 - Listar cursos");
                 System.out.println("13 - Listar usuários");
+                System.out.println("18 - Cadastrar curso");
                 break;
             case COORDENADOR:
                 System.out.println("5 - Cadastrar disciplina");
                 System.out.println("6 - Listar disciplinas");
+                System.out.println("7 - Listar turmas");
                 System.out.println("8 - Listar cursos");
                 System.out.println("9 - Cadastrar período letivo");
                 System.out.println("10 - Listar períodos letivos");
                 System.out.println("11 - Ativar período letivo");
                 System.out.println("12 - Encerrar período letivo");
                 System.out.println("14 - Ofertar turma");
-                System.out.println("15 - Listar turmas");
                 System.out.println("16 - Alterar turma");
                 System.out.println("17 - Cancelar turma");
                 break;
             case PROFESSOR:
                 System.out.println("6 - Listar disciplinas");
+                System.out.println("7 - Listar turmas");
                 System.out.println("10 - Listar períodos letivos");
-                System.out.println("15 - Listar turmas");
                 break;
             case ALUNO:
                 System.out.println("6 - Listar disciplinas");
+                System.out.println("7 - Listar turmas");
                 System.out.println("10 - Listar períodos letivos");
-                System.out.println("15 - Listar turmas");
                 break;
             default:
                 break;
@@ -334,6 +334,11 @@ public class ClassRoomCLI {
     }
 
     private void listarDisciplinas() {
+        if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            listarDisciplinasDisponiveisParaAluno();
+            return;
+        }
+
         List<Disciplina> disciplinas = disciplinaController.getDisciplinas();
         if (disciplinas.isEmpty()) {
             System.out.println("Nenhuma disciplina cadastrada.");
@@ -343,13 +348,25 @@ public class ClassRoomCLI {
         System.out.println("Disciplinas cadastradas:");
         for (Disciplina disciplina : disciplinas) {
             System.out.println();
-            System.out.println("ID: " + disciplina.getId());
-            System.out.println("Código: " + disciplina.getCodigo());
-            System.out.println("Nome: " + disciplina.getNome());
-            System.out.println("Carga horária: " + disciplina.getCargaHoraria());
-            System.out.println("Créditos: " + disciplina.getCreditos());
-            System.out.println("ID do curso: " + disciplina.getIdCurso());
-            System.out.println("Pré-requisitos: " + formatarPreRequisitos(disciplina.getPreRequisitosIds()));
+            exibirDisciplina(disciplina);
+        }
+    }
+
+    private void listarDisciplinasDisponiveisParaAluno() {
+        try {
+            List<Disciplina> disciplinas = turmaController.consultarDisciplinasDisponiveisParaAluno();
+            if (disciplinas.isEmpty()) {
+                System.out.println("Nenhuma disciplina disponível.");
+                return;
+            }
+
+            System.out.println("Disciplinas disponíveis:");
+            for (Disciplina disciplina : disciplinas) {
+                System.out.println();
+                exibirDisciplina(disciplina);
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -419,6 +436,11 @@ public class ClassRoomCLI {
     }
 
     private void listarTurmas() {
+        if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            listarTurmasDisponiveisParaAluno();
+            return;
+        }
+
         List<Turma> turmas = turmaController.getTurmas();
         if (turmas.isEmpty()) {
             System.out.println("Nenhuma turma cadastrada.");
@@ -429,6 +451,24 @@ public class ClassRoomCLI {
         for (Turma turma : turmas) {
             System.out.println();
             exibirTurma(turma);
+        }
+    }
+
+    private void listarTurmasDisponiveisParaAluno() {
+        try {
+            List<Turma> turmas = turmaController.consultarTurmasDisponiveisParaAluno();
+            if (turmas.isEmpty()) {
+                System.out.println("Nenhuma turma disponível.");
+                return;
+            }
+
+            System.out.println("Turmas disponíveis:");
+            for (Turma turma : turmas) {
+                System.out.println();
+                exibirTurma(turma);
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
@@ -684,6 +724,16 @@ public class ClassRoomCLI {
         System.out.println("Data de início: " + turma.getDataInicioAulas());
         System.out.println("Horários: " + formatarHorarios(turma.getHorarios()));
         System.out.println("Status: " + (turma.isCancelada() ? "cancelada" : "ativa"));
+    }
+
+    private void exibirDisciplina(Disciplina disciplina) {
+        System.out.println("ID: " + disciplina.getId());
+        System.out.println("Código: " + disciplina.getCodigo());
+        System.out.println("Nome: " + disciplina.getNome());
+        System.out.println("Carga horária: " + disciplina.getCargaHoraria());
+        System.out.println("Créditos: " + disciplina.getCreditos());
+        System.out.println("ID do curso: " + disciplina.getIdCurso());
+        System.out.println("Pré-requisitos: " + formatarPreRequisitos(disciplina.getPreRequisitosIds()));
     }
 
     private String formatarHorarios(List<BlocoHorario> horarios) {

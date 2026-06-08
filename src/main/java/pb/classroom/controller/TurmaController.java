@@ -3,7 +3,9 @@ package pb.classroom.controller;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Disciplina;
@@ -94,6 +96,27 @@ public class TurmaController {
         return turma;
     }
 
+    public List<Turma> consultarTurmasDisponiveisParaAluno() {
+        validarAlunoAutenticado();
+        return Collections.unmodifiableList(filtrarTurmasDisponiveis());
+    }
+
+    public List<Disciplina> consultarDisciplinasDisponiveisParaAluno() {
+        validarAlunoAutenticado();
+        Set<String> idsDisciplinasComTurmaDisponivel = new HashSet<>();
+        for (Turma turma : filtrarTurmasDisponiveis()) {
+            idsDisciplinasComTurmaDisponivel.add(turma.getIdDisciplina());
+        }
+
+        List<Disciplina> disponiveis = new ArrayList<>();
+        for (Disciplina disciplina : disciplinas) {
+            if (idsDisciplinasComTurmaDisponivel.contains(disciplina.getId())) {
+                disponiveis.add(disciplina);
+            }
+        }
+        return Collections.unmodifiableList(disponiveis);
+    }
+
     public List<Turma> getTurmas() {
         return Collections.unmodifiableList(turmas);
     }
@@ -103,6 +126,32 @@ public class TurmaController {
                 || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.COORDENADOR) {
             throw new IllegalArgumentException("Apenas coordenadores podem gerenciar turmas.");
         }
+    }
+
+    private void validarAlunoAutenticado() {
+        if (!autenticacaoController.isAutenticado()
+                || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.ALUNO) {
+            throw new IllegalArgumentException("Apenas alunos podem consultar disciplinas e turmas disponíveis.");
+        }
+    }
+
+    private List<Turma> filtrarTurmasDisponiveis() {
+        List<Turma> disponiveis = new ArrayList<>();
+        for (Turma turma : turmas) {
+            if (!turma.isCancelada() && periodoLetivoEstaAtivo(turma.getIdPeriodoLetivo())) {
+                disponiveis.add(turma);
+            }
+        }
+        return disponiveis;
+    }
+
+    private boolean periodoLetivoEstaAtivo(String idPeriodoLetivo) {
+        for (PeriodoLetivo periodoLetivo : periodosLetivos) {
+            if (periodoLetivo.getId().equals(idPeriodoLetivo) && periodoLetivo.isAtivo()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void validarDisciplinaExistente(String idDisciplina) {
