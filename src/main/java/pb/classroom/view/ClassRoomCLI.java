@@ -10,17 +10,20 @@ import java.util.Scanner;
 import pb.classroom.controller.AutenticacaoController;
 import pb.classroom.controller.CursoController;
 import pb.classroom.controller.DisciplinaController;
+import pb.classroom.controller.MatriculaController;
 import pb.classroom.controller.PeriodoLetivoController;
 import pb.classroom.controller.TurmaController;
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
+import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
+import pb.classroom.repository.MatriculaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
@@ -33,11 +36,13 @@ public class ClassRoomCLI {
     private final DisciplinaController disciplinaController;
     private final PeriodoLetivoController periodoLetivoController;
     private final TurmaController turmaController;
+    private final MatriculaController matriculaController;
     private final UsuarioRepository usuarioRepository;
     private final CursoRepository cursoRepository;
     private final DisciplinaRepository disciplinaRepository;
     private final PeriodoLetivoRepository periodoLetivoRepository;
     private final TurmaRepository turmaRepository;
+    private final MatriculaRepository matriculaRepository;
 
     public ClassRoomCLI() {
         this(
@@ -46,7 +51,8 @@ public class ClassRoomCLI {
                 new DisciplinaRepository(),
                 new CursoRepository(),
                 new PeriodoLetivoRepository(),
-                new TurmaRepository());
+                new TurmaRepository(),
+                new MatriculaRepository());
     }
 
     ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
@@ -56,7 +62,8 @@ public class ClassRoomCLI {
                 new DisciplinaRepository(),
                 new CursoRepository(),
                 new PeriodoLetivoRepository(),
-                new TurmaRepository());
+                new TurmaRepository(),
+                new MatriculaRepository());
     }
 
     ClassRoomCLI(
@@ -66,12 +73,31 @@ public class ClassRoomCLI {
             CursoRepository cursoRepository,
             PeriodoLetivoRepository periodoLetivoRepository,
             TurmaRepository turmaRepository) {
+        this(
+                scanner,
+                usuarioRepository,
+                disciplinaRepository,
+                cursoRepository,
+                periodoLetivoRepository,
+                turmaRepository,
+                new MatriculaRepository());
+    }
+
+    ClassRoomCLI(
+            Scanner scanner,
+            UsuarioRepository usuarioRepository,
+            DisciplinaRepository disciplinaRepository,
+            CursoRepository cursoRepository,
+            PeriodoLetivoRepository periodoLetivoRepository,
+            TurmaRepository turmaRepository,
+            MatriculaRepository matriculaRepository) {
         this.scanner = scanner;
         this.usuarioRepository = usuarioRepository;
         this.disciplinaRepository = disciplinaRepository;
         this.cursoRepository = cursoRepository;
         this.periodoLetivoRepository = periodoLetivoRepository;
         this.turmaRepository = turmaRepository;
+        this.matriculaRepository = matriculaRepository;
         this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
         this.cursoController = new CursoController(
                 autenticacaoController,
@@ -89,6 +115,11 @@ public class ClassRoomCLI {
                 disciplinaController.getDisciplinas(),
                 periodoLetivoController.getPeriodosLetivos(),
                 autenticacaoController.getUsuarios());
+        this.matriculaController = new MatriculaController(
+                autenticacaoController,
+                matriculaRepository.carregarMatriculas(),
+                turmaController.getTurmas(),
+                periodoLetivoController.getPeriodosLetivos());
     }
 
     public void iniciar() {
@@ -122,7 +153,11 @@ public class ClassRoomCLI {
                     listarTurmas();
                     break;
                 case "8":
-                    listarCursos();
+                    if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+                        solicitarMatricula();
+                    } else {
+                        listarCursos();
+                    }
                     break;
                 case "9":
                     cadastrarPeriodoLetivo();
@@ -215,6 +250,7 @@ public class ClassRoomCLI {
             case ALUNO:
                 System.out.println("6 - Listar disciplinas");
                 System.out.println("7 - Listar turmas");
+                System.out.println("8 - Solicitar matrícula");
                 System.out.println("10 - Listar períodos letivos");
                 break;
             default:
@@ -468,6 +504,42 @@ public class ClassRoomCLI {
                 exibirTurma(turma);
             }
         } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void solicitarMatricula() {
+        if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            System.out.println("Apenas alunos podem solicitar matrícula.");
+            return;
+        }
+
+        List<Turma> turmasDisponiveis;
+        try {
+            turmasDisponiveis = turmaController.consultarTurmasDisponiveisParaAluno();
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            return;
+        }
+
+        if (turmasDisponiveis.isEmpty()) {
+            System.out.println("Nenhuma turma disponível.");
+            return;
+        }
+
+        System.out.println("Turmas disponíveis:");
+        for (Turma turma : turmasDisponiveis) {
+            System.out.println();
+            exibirTurma(turma);
+        }
+
+        String idTurma = lerLinha("ID da turma: ");
+        try {
+            Matricula matricula = matriculaController.solicitarMatricula(idTurma);
+            matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
+            System.out.println("Matrícula realizada com sucesso.");
+            System.out.println("ID da matrícula: " + matricula.getId());
+        } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         }
     }

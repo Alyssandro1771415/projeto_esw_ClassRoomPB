@@ -260,6 +260,34 @@ class EntidadesModeloTest {
     }
 
     @Nested
+    @DisplayName("Matricula")
+    class MatriculaTests {
+
+        @Test
+        void criaMatriculaValida() {
+            Matricula matricula = new Matricula("mat-1", "aluno-1", "turma-1");
+
+            assertAll(
+                    () -> assertEquals("mat-1", matricula.getId()),
+                    () -> assertEquals("aluno-1", matricula.getIdAluno()),
+                    () -> assertEquals("turma-1", matricula.getIdTurma()));
+        }
+
+        @Test
+        void rejeitaCamposObrigatoriosEComparaPorId() {
+            assertAll(
+                    () -> assertThrows(IllegalArgumentException.class, () -> new Matricula("", "a1", "t1")),
+                    () -> assertThrows(IllegalArgumentException.class, () -> new Matricula("m1", null, "t1")),
+                    () -> assertThrows(IllegalArgumentException.class, () -> new Matricula("m1", "a1", " ")));
+
+            Matricula primeira = new Matricula("m1", "a1", "t1");
+            Matricula segunda = new Matricula("m1", "a2", "t2");
+            assertEquals(primeira, segunda);
+            assertEquals(primeira.hashCode(), segunda.hashCode());
+        }
+    }
+
+    @Nested
     @DisplayName("Usuario")
     class UsuarioTests {
 

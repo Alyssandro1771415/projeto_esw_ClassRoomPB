@@ -3,9 +3,11 @@ package pb.classroom.view;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pb.classroom.model.Matricula;
 import pb.classroom.model.Turma;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
+import pb.classroom.repository.MatriculaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
@@ -20,6 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Scanner;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -150,6 +153,31 @@ class ClassRoomCLIFluxosIntegradosTest {
         assertFalse(saida.contains("ESW102"));
         assertFalse(saida.contains("turma-cancelada"));
         assertFalse(saida.contains("turma-encerrada"));
+    }
+
+    @Test
+    @DisplayName("RF19: aluno nao realiza matricula com choque de horario")
+    void alunoNaoRealizaMatriculaComChoqueDeHorario() throws Exception {
+        Path arquivo = criarArquivoRf19();
+        String saida = executar(
+                arquivo,
+                "1",
+                "aluno@classroompb.com",
+                "123456",
+                "",
+                "8",
+                "turma-1",
+                "",
+                "8",
+                "turma-2",
+                "",
+                "0");
+
+        List<Matricula> matriculas = new MatriculaRepository(arquivo).carregarMatriculas();
+        assertTrue(saida.contains("Matrícula realizada com sucesso."));
+        assertTrue(saida.contains("Choque de horário"));
+        assertEquals(1, matriculas.size());
+        assertEquals("turma-1", matriculas.get(0).getIdTurma());
     }
 
     @Test
@@ -335,6 +363,39 @@ class ClassRoomCLIFluxosIntegradosTest {
         return arquivo;
     }
 
+    private Path criarArquivoRf19() throws Exception {
+        Path arquivo = tempDir.resolve("armazenamento-rf19.json");
+        Files.writeString(
+                arquivo,
+                "{\n"
+                        + "  \"usuarios\": [\n"
+                        + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Teste\","
+                        + "\"matricula\":\"2026200\",\"email\":\"aluno@classroompb.com\","
+                        + "\"senha\":\"123456\",\"ativo\":true}\n"
+                        + "  ],\n"
+                        + "  \"disciplinas\": [],\n"
+                        + "  \"cursos\": [],\n"
+                        + "  \"periodosLetivos\": [\n"
+                        + "    {\"id\":\"periodo-1\",\"codigo\":\"2026.2\",\"ativo\":true}\n"
+                        + "  ],\n"
+                        + "  \"turmas\": [\n"
+                        + "    {\"id\":\"turma-1\",\"idDisciplina\":\"disc-1\","
+                        + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-1\","
+                        + "\"limiteVagas\":30,\"sala\":\"Sala 101\","
+                        + "\"dataInicioAulas\":\"2026-08-01\","
+                        + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false},\n"
+                        + "    {\"id\":\"turma-2\",\"idDisciplina\":\"disc-2\","
+                        + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-2\","
+                        + "\"limiteVagas\":30,\"sala\":\"Sala 102\","
+                        + "\"dataInicioAulas\":\"2026-08-01\","
+                        + "\"horarios\":[\"MONDAY|09:00|11:00\"],\"cancelada\":false}\n"
+                        + "  ],\n"
+                        + "  \"matriculas\": []\n"
+                        + "}\n",
+                StandardCharsets.UTF_8);
+        return arquivo;
+    }
+
     private String executar(Path arquivo, String... linhas) {
         String entrada = String.join("\n", linhas) + "\n";
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -348,7 +409,8 @@ class ClassRoomCLIFluxosIntegradosTest {
                     new DisciplinaRepository(arquivo),
                     new CursoRepository(arquivo),
                     new PeriodoLetivoRepository(arquivo),
-                    new TurmaRepository(arquivo));
+                    new TurmaRepository(arquivo),
+                    new MatriculaRepository(arquivo));
             cli.iniciar();
         } finally {
             System.setOut(saidaAnterior);

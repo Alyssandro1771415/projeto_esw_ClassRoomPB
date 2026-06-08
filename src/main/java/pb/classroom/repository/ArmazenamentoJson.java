@@ -47,12 +47,29 @@ final class ArmazenamentoJson {
             String cursosJson,
             String periodosLetivosJson,
             String turmasJson) {
+        return montarDocumento(
+                usuariosJson,
+                disciplinasJson,
+                cursosJson,
+                periodosLetivosJson,
+                turmasJson,
+                "[]");
+    }
+
+    static String montarDocumento(
+            String usuariosJson,
+            String disciplinasJson,
+            String cursosJson,
+            String periodosLetivosJson,
+            String turmasJson,
+            String matriculasJson) {
         return "{\n"
                 + "  \"usuarios\": " + normalizarArray(usuariosJson) + ",\n"
                 + "  \"disciplinas\": " + normalizarArray(disciplinasJson) + ",\n"
                 + "  \"cursos\": " + normalizarArray(cursosJson) + ",\n"
                 + "  \"periodosLetivos\": " + normalizarArray(periodosLetivosJson) + ",\n"
-                + "  \"turmas\": " + normalizarArray(turmasJson) + "\n"
+                + "  \"turmas\": " + normalizarArray(turmasJson) + ",\n"
+                + "  \"matriculas\": " + normalizarArray(matriculasJson) + "\n"
                 + "}\n";
     }
 

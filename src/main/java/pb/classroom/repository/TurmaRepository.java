@@ -56,12 +56,14 @@ public class TurmaRepository {
             String disciplinasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "disciplinas");
             String cursosJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "cursos");
             String periodosLetivosJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "periodosLetivos");
+            String matriculasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "matriculas");
             String documento = ArmazenamentoJson.montarDocumento(
                     usuariosJson,
                     disciplinasJson,
                     cursosJson,
                     periodosLetivosJson,
-                    converterTurmasParaJson(turmas));
+                    converterTurmasParaJson(turmas),
+                    matriculasJson);
             Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Não foi possível salvar as turmas.", e);

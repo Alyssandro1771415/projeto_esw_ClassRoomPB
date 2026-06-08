@@ -25,9 +25,11 @@ class ArmazenamentoJsonTest {
                 "[{\"id\":\"d1\"}]",
                 "[{\"id\":\"c1\"}]",
                 "[{\"id\":\"p1\"}]",
-                "[{\"id\":\"t1\"}]");
+                "[{\"id\":\"t1\"}]",
+                "[{\"id\":\"m1\"}]");
         assertTrue(doc.contains("\"usuarios\""));
         assertTrue(doc.contains("\"turmas\""));
+        assertTrue(doc.contains("\"matriculas\""));
     }
 
     @Test

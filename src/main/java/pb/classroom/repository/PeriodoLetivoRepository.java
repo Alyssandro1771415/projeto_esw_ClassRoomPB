@@ -52,12 +52,14 @@ public class PeriodoLetivoRepository {
             String disciplinasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "disciplinas");
             String cursosJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "cursos");
             String turmasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "turmas");
+            String matriculasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "matriculas");
             String documento = ArmazenamentoJson.montarDocumento(
                     usuariosJson,
                     disciplinasJson,
                     cursosJson,
                     converterPeriodosParaJson(periodosLetivos),
-                    turmasJson);
+                    turmasJson,
+                    matriculasJson);
             Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new IllegalStateException("Não foi possível salvar os períodos letivos.", e);

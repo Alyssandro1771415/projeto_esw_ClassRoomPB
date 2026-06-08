@@ -243,6 +243,7 @@ A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 - Ver dados do usuario logado.
 - Logout.
 - Listar disciplinas.
+- Listar turmas.
 - Listar periodos letivos.
 
 ### Aluno
@@ -251,6 +252,8 @@ A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 - Ver dados do usuario logado.
 - Logout.
 - Listar disciplinas.
+- Listar turmas disponiveis.
+- Solicitar matricula.
 - Listar periodos letivos.
 
 ## 10. Classes do Pacote `pb.classroom.model`
@@ -389,6 +392,18 @@ Atributos:
 
 Essa classe e usada pelo fluxo de oferta de turmas (`RF10` a `RF14`).
 
+### `Matricula`
+
+Representa o vinculo persistido entre um aluno e uma turma.
+
+Atributos:
+
+- `id`
+- `idAluno`
+- `idTurma`
+
+Os campos sao obrigatorios e a igualdade e feita pelo `id`.
+
 ## 11. Classes do Pacote `pb.classroom.controller`
 
 ### `AutenticacaoController`
@@ -517,6 +532,24 @@ Regras:
 - Alteracao e cancelamento so sao permitidos antes da data de inicio das aulas.
 - `getTurmas()` retorna lista imutavel.
 
+### `MatriculaController`
+
+Controla a solicitacao de matricula e a validacao de choque de horario.
+
+Principal metodo:
+
+- `solicitarMatricula(String idTurma)`
+
+Regras:
+
+- Apenas aluno autenticado pode solicitar matricula.
+- A turma precisa existir, nao estar cancelada e pertencer a periodo ativo.
+- O aluno nao pode se matricular duas vezes na mesma turma.
+- O sistema compara os blocos de horario das turmas do aluno no mesmo periodo letivo.
+- Horarios sobrepostos no mesmo dia sao bloqueados.
+- Horarios consecutivos, em dias diferentes ou em periodos diferentes sao permitidos.
+- Turma cancelada ja matriculada nao gera conflito.
+
 ## 12. Classes do Pacote `pb.classroom.repository`
 
 ### `ArmazenamentoJson`
@@ -527,7 +560,7 @@ Responsabilidades:
 
 - Extrair arrays por nome de campo.
 - Retornar `[]` quando um campo ainda nao existe.
-- Montar o documento completo de persistencia com usuarios, disciplinas, cursos, periodos letivos e turmas.
+- Montar o documento completo de persistencia com usuarios, disciplinas, cursos, periodos letivos, turmas e matriculas.
 - Validar se os conteudos salvos como arrays comecam com `[` e terminam com `]`.
 
 Observacao tecnica: a implementacao usa manipulacao manual de texto e expressoes regulares. Funciona para a estrutura atual simples, mas nao substitui uma biblioteca JSON completa.
@@ -542,7 +575,7 @@ Responsabilidades:
 - Criar administrador inicial se nao houver arquivo ou lista de usuarios.
 - Converter JSON em objetos `Usuario`.
 - Converter objetos `Usuario` em JSON.
-- Preservar disciplinas, cursos, periodos letivos e turmas ao salvar usuarios.
+- Preservar disciplinas, cursos, periodos letivos, turmas e matriculas ao salvar usuarios.
 
 ### `CursoRepository`
 
@@ -553,7 +586,7 @@ Responsabilidades:
 - Ler o array `cursos`.
 - Converter JSON em objetos `Curso`.
 - Converter cursos em JSON.
-- Preservar usuarios, disciplinas, periodos letivos e turmas ao salvar cursos.
+- Preservar usuarios, disciplinas, periodos letivos, turmas e matriculas ao salvar cursos.
 
 ### `DisciplinaRepository`
 
@@ -565,7 +598,7 @@ Responsabilidades:
 - Converter JSON em objetos `Disciplina`.
 - Converter disciplinas em JSON.
 - Salvar pre-requisitos como lista de IDs.
-- Preservar usuarios, cursos, periodos letivos e turmas ao salvar disciplinas.
+- Preservar usuarios, cursos, periodos letivos, turmas e matriculas ao salvar disciplinas.
 
 ### `PeriodoLetivoRepository`
 
@@ -576,7 +609,7 @@ Responsabilidades:
 - Ler o array `periodosLetivos`.
 - Converter JSON em objetos `PeriodoLetivo`.
 - Converter periodos em JSON.
-- Preservar usuarios, disciplinas, cursos e turmas ao salvar periodos.
+- Preservar usuarios, disciplinas, cursos, turmas e matriculas ao salvar periodos.
 
 ### `TurmaRepository`
 
@@ -588,7 +621,18 @@ Responsabilidades:
 - Converter JSON em objetos `Turma`.
 - Converter turmas em JSON.
 - Salvar horarios como strings no formato `DIA|HH:mm|HH:mm`.
-- Preservar usuarios, disciplinas, cursos e periodos letivos ao salvar turmas.
+- Preservar usuarios, disciplinas, cursos, periodos letivos e matriculas ao salvar turmas.
+
+### `MatriculaRepository`
+
+Carrega e salva matriculas.
+
+Responsabilidades:
+
+- Ler o array `matriculas`.
+- Converter JSON em objetos `Matricula`.
+- Converter matriculas em JSON.
+- Preservar usuarios, disciplinas, cursos, periodos letivos e turmas ao salvar matriculas.
 
 ## 13. Classe `ClassRoomCLI`
 
@@ -624,6 +668,7 @@ Fluxos implementados:
 - Listagem de turmas.
 - Alteracao de turma.
 - Cancelamento de turma.
+- Solicitacao de matricula com validacao de choque de horario.
 
 ## 14. Menu da Aplicacao
 
@@ -637,7 +682,7 @@ Opcoes existentes no codigo:
 5  - Cadastrar disciplina
 6  - Listar disciplinas
 7  - Listar turmas
-8  - Listar cursos
+8  - Listar cursos / Solicitar matricula para aluno
 9  - Cadastrar periodo letivo
 10 - Listar periodos letivos
 11 - Ativar periodo letivo
@@ -857,6 +902,17 @@ Verifica:
 - Periodo duplicado nao e permitido.
 - Formato invalido e rejeitado.
 
+### `MatriculaControllerTest`
+
+Verifica:
+
+- Bloqueio de choque de horario no mesmo dia e periodo letivo.
+- Permissao para horarios consecutivos.
+- Permissao para dias ou periodos diferentes.
+- Turma cancelada ja matriculada nao gera conflito.
+- Apenas aluno autenticado solicita matricula.
+- Turma indisponivel, inexistente ou duplicada e rejeitada.
+
 ### `TurmaControllerTest`
 
 Verifica:
@@ -878,6 +934,13 @@ Verifica:
 
 - Turmas sao salvas e carregadas com horarios e status de cancelamento.
 - Salvar turmas preserva os demais arrays do armazenamento.
+
+### `MatriculaRepositoryTest`
+
+Verifica:
+
+- Salvamento e carregamento de matriculas.
+- Preservacao das demais colecoes do armazenamento.
 
 ### `TesteMarkdownReport`
 
@@ -950,11 +1013,19 @@ Implementado em `TurmaController` e `Turma`. O professor precisa ser informado, 
 
 Implementado em `TurmaController` e CLI. A alteracao e o cancelamento sao bloqueados quando a data atual nao e anterior a `dataInicioAulas`.
 
+### RF15 - Aluno consulta disciplinas e turmas disponiveis
+
+Implementado em `TurmaController` e CLI. Para o aluno, sao exibidas apenas turmas nao canceladas de periodos letivos ativos e as disciplinas vinculadas a essas turmas.
+
+### RF19 - Impedir choque de horario entre turmas do mesmo aluno
+
+Implementado em `MatriculaController`, `MatriculaRepository` e CLI. Uma nova matricula e rejeitada quando seus blocos de horario se sobrepoem aos de outra turma do aluno no mesmo periodo letivo.
+
 ## 23. Limitacoes Atuais
 
 Alguns pontos ainda nao estao implementados completamente:
 
-- Nao existe matricula de alunos em turmas.
+- A matricula ainda nao valida vagas, pre-requisitos ou lista de espera.
 - Nao existe lista de espera.
 - Nao existe frequencia.
 - Nao existe notas, media, recuperacao ou situacao final.
@@ -994,14 +1065,13 @@ Proximos passos naturais:
 
 Proximos passos para releases futuras:
 
-1. Consulta de turmas por aluno.
-2. Solicitacao de matricula.
-3. Controle de vagas.
-4. Lista de espera.
-5. Frequencia.
-6. Notas.
-7. Historico.
-8. Relatorios academicos.
+1. Controle de vagas.
+2. Validacao de pre-requisitos.
+3. Lista de espera.
+4. Frequencia.
+5. Notas.
+6. Historico.
+7. Relatorios academicos.
 
 ## 26. Comandos Uteis
 
@@ -1045,4 +1115,4 @@ mvn package
 
 O ClassRoomPB esta estruturado em MVC, possui dominio academico inicial, autenticacao, controle de perfis, persistencia local e testes automatizados para os fluxos principais ja implementados.
 
-O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos, oferta de turmas, validacao de professor responsavel, choque de horario, alteracao/cancelamento antes do inicio das aulas e relatorio automatico de testes.
+O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos, oferta de turmas, consulta de turmas disponiveis, matricula persistida, validacao de choque de horario para professor e aluno, alteracao/cancelamento de turmas e relatorio automatico de testes.

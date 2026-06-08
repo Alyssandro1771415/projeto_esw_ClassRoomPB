@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
+import pb.classroom.repository.MatriculaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
@@ -39,7 +40,8 @@ class ClassRoomCLITest {
                     new DisciplinaRepository(tempDir.resolve("d.json")),
                     new CursoRepository(tempDir.resolve("c.json")),
                     new PeriodoLetivoRepository(tempDir.resolve("p.json")),
-                    new TurmaRepository(tempDir.resolve("t.json")));
+                    new TurmaRepository(tempDir.resolve("t.json")),
+                    new MatriculaRepository(tempDir.resolve("m.json")));
             cli.iniciar();
         } finally {
             System.setOut(anterior);
@@ -63,7 +65,8 @@ class ClassRoomCLITest {
                     new DisciplinaRepository(tempDir.resolve("d2.json")),
                     new CursoRepository(tempDir.resolve("c2.json")),
                     new PeriodoLetivoRepository(tempDir.resolve("p2.json")),
-                    new TurmaRepository(tempDir.resolve("t2.json")));
+                    new TurmaRepository(tempDir.resolve("t2.json")),
+                    new MatriculaRepository(tempDir.resolve("m2.json")));
             cli.iniciar();
         } finally {
             System.setOut(anterior);
