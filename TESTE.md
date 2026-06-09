@@ -2,7 +2,7 @@
 
 Gerado automaticamente apos a execucao dos testes Maven.
 
-Data/hora: 2026-06-08 20:31:39
+Data/hora: 2026-06-08 22:27:39
 
 Comando esperado:
 
@@ -15,7 +15,7 @@ mvn clean test
 Resultado:
 
 - Build: SUCCESS
-- Total de testes: 113
+- Total de testes: 122
 - Falhas: 0
 - Erros: 0
 - Ignorados: 0
@@ -25,6 +25,7 @@ Suites executadas:
 - pb.classroom.MainTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.controller.AutenticacaoControllerCadastroTest: 5 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.controller.AutenticacaoControllerLoginTest: 7 testes, 0 falhas, 0 erros, 0 ignorados
+- pb.classroom.controller.ConfirmarMatriculaAutomaticaTest: 9 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.controller.CursoControllerTest: 12 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.controller.DisciplinaControllerTest: 4 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.controller.MatriculaControllerTest: 6 testes, 0 falhas, 0 erros, 0 ignorados

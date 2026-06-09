@@ -119,7 +119,8 @@ public class ClassRoomCLI {
                 autenticacaoController,
                 matriculaRepository.carregarMatriculas(),
                 turmaController.getTurmas(),
-                periodoLetivoController.getPeriodosLetivos());
+                periodoLetivoController.getPeriodosLetivos(),
+                disciplinaController.getDisciplinas());
     }
 
     public void iniciar() {

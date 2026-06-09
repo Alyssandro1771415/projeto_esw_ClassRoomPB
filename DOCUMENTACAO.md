@@ -534,7 +534,7 @@ Regras:
 
 ### `MatriculaController`
 
-Controla a solicitacao de matricula e a validacao de choque de horario.
+Controla a solicitacao de matricula com confirmacao automatica (RF20), validacao de choque de horario, controle de vagas e pre-requisitos.
 
 Principal metodo:
 
@@ -545,6 +545,8 @@ Regras:
 - Apenas aluno autenticado pode solicitar matricula.
 - A turma precisa existir, nao estar cancelada e pertencer a periodo ativo.
 - O aluno nao pode se matricular duas vezes na mesma turma.
+- A turma precisa ter vagas disponiveis (total de matriculas < limiteVagas).
+- Os pre-requisitos da disciplina da turma devem estar atendidos (aluno matriculado em turma da disciplina pre-requisito).
 - O sistema compara os blocos de horario das turmas do aluno no mesmo periodo letivo.
 - Horarios sobrepostos no mesmo dia sao bloqueados.
 - Horarios consecutivos, em dias diferentes ou em periodos diferentes sao permitidos.
@@ -913,6 +915,20 @@ Verifica:
 - Apenas aluno autenticado solicita matricula.
 - Turma indisponivel, inexistente ou duplicada e rejeitada.
 
+### `ConfirmarMatriculaAutomaticaTest`
+
+Verifica (RF20):
+
+- Matricula confirmada quando ha vagas disponiveis.
+- Matricula rejeitada quando turma esta lotada.
+- Matricula confirmada no limite exato de vagas.
+- Segunda matricula rejeitada quando ultima vaga foi preenchida.
+- Matricula confirmada quando disciplina nao possui pre-requisitos.
+- Matricula confirmada quando pre-requisito atendido.
+- Matricula rejeitada quando pre-requisito nao atendido.
+- Matricula confirmada com multiplos pre-requisitos todos atendidos.
+- Matricula rejeitada com multiplos pre-requisitos quando um nao atendido.
+
 ### `TurmaControllerTest`
 
 Verifica:
@@ -1021,15 +1037,24 @@ Implementado em `TurmaController` e CLI. Para o aluno, sao exibidas apenas turma
 
 Implementado em `MatriculaController`, `MatriculaRepository` e CLI. Uma nova matricula e rejeitada quando seus blocos de horario se sobrepoem aos de outra turma do aluno no mesmo periodo letivo.
 
+### RF20 - Confirmar matricula automatica
+
+Implementado em `MatriculaController`. Ao solicitar matricula, o sistema automaticamente valida:
+
+- Vagas disponiveis na turma (total de matriculas existentes vs `limiteVagas`).
+- Pre-requisitos da disciplina da turma (aluno deve possuir matricula em turma de cada disciplina pre-requisito).
+
+Se ambas as validacoes passarem (alem das validacoes ja existentes de turma disponivel, duplicidade e choque de horario), a matricula e confirmada automaticamente. Caso contrario, e rejeitada com mensagem descritiva.
+
 ## 23. Limitacoes Atuais
 
 Alguns pontos ainda nao estao implementados completamente:
 
-- A matricula ainda nao valida vagas, pre-requisitos ou lista de espera.
 - Nao existe lista de espera.
 - Nao existe frequencia.
 - Nao existe notas, media, recuperacao ou situacao final.
 - Nao existe historico academico.
+- A validacao de pre-requisitos considera "atendido" quando o aluno possui uma matricula em turma da disciplina pre-requisito, sem verificar aprovacao por nota (pois notas nao estao implementadas).
 - A persistencia JSON e manual e simples, baseada em texto/regex.
 
 ## 24. Pontos de Atencao Tecnica
