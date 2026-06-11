@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import pb.classroom.model.Matricula;
+import pb.classroom.model.StatusMatricula;
 
 public class MatriculaRepository {
 
@@ -73,7 +74,11 @@ public class MatriculaRepository {
             matriculas.add(new Matricula(
                     obterTexto(objeto, "id"),
                     obterTexto(objeto, "idAluno"),
-                    obterTexto(objeto, "idTurma")));
+                    obterTexto(objeto, "idTurma"),
+                    StatusMatricula.valueOf(obterTextoOuPadrao(
+                            objeto,
+                            "status",
+                            StatusMatricula.CONFIRMADA.name()))));
         }
         return matriculas;
     }
@@ -87,7 +92,8 @@ public class MatriculaRepository {
             json.append("    {\n");
             json.append("      \"id\": \"").append(escapar(matricula.getId())).append("\",\n");
             json.append("      \"idAluno\": \"").append(escapar(matricula.getIdAluno())).append("\",\n");
-            json.append("      \"idTurma\": \"").append(escapar(matricula.getIdTurma())).append("\"\n");
+            json.append("      \"idTurma\": \"").append(escapar(matricula.getIdTurma())).append("\",\n");
+            json.append("      \"status\": \"").append(matricula.getStatus().name()).append("\"\n");
             json.append("    }");
             if (i < matriculas.size() - 1) {
                 json.append(",");
@@ -103,6 +109,14 @@ public class MatriculaRepository {
         Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*\"((?:\\\\.|[^\"])*)\"").matcher(objeto);
         if (!matcher.find()) {
             throw new IllegalArgumentException("Campo obrigatório ausente no armazenamento: " + campo);
+        }
+        return desescapar(matcher.group(1));
+    }
+
+    private String obterTextoOuPadrao(String objeto, String campo, String padrao) {
+        Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*\"((?:\\\\.|[^\"])*)\"").matcher(objeto);
+        if (!matcher.find()) {
+            return padrao;
         }
         return desescapar(matcher.group(1));
     }

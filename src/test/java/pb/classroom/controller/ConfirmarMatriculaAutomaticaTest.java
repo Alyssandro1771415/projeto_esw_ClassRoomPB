@@ -8,6 +8,7 @@ import pb.classroom.model.Disciplina;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.StatusMatricula;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 
@@ -26,7 +27,6 @@ class ConfirmarMatriculaAutomaticaTest {
         private Usuario aluno;
         private AutenticacaoController autenticacaoController;
         private PeriodoLetivo periodoAtivo;
-
         private Disciplina discCalculo;
         private Disciplina discFisica;
         private Disciplina discMecanica;
@@ -45,11 +45,22 @@ class ConfirmarMatriculaAutomaticaTest {
                 autenticacaoController.login("A001", SENHA);
 
                 periodoAtivo = new PeriodoLetivo("periodo-1", "2026.1", true);
-
                 discCalculo = new Disciplina("disc-calculo", "CAL01", "Cálculo I", 60, 4, "curso-1", List.of());
-                discFisica = new Disciplina("disc-fisica", "FIS01", "Física I", 60, 4, "curso-1",
+                discFisica = new Disciplina(
+                                "disc-fisica",
+                                "FIS01",
+                                "Física I",
+                                60,
+                                4,
+                                "curso-1",
                                 List.of("disc-calculo"));
-                discMecanica = new Disciplina("disc-mecanica", "MEC01", "Mecânica", 60, 4, "curso-1",
+                discMecanica = new Disciplina(
+                                "disc-mecanica",
+                                "MEC01",
+                                "Mecânica",
+                                60,
+                                4,
+                                "curso-1",
                                 List.of("disc-calculo", "disc-fisica"));
         }
 
@@ -57,84 +68,79 @@ class ConfirmarMatriculaAutomaticaTest {
         @DisplayName("RF20: matrícula confirmada quando há vagas disponíveis")
         void matriculaConfirmadaQuandoHaVagas() {
                 Turma turma = criarTurma("turma-1", "disc-calculo", 30);
-                MatriculaController controller = criarController(
-                                List.of(), List.of(turma), List.of(discCalculo));
+                MatriculaController controller = criarController(List.of(), List.of(turma), List.of(discCalculo));
 
                 Matricula matricula = controller.solicitarMatricula(turma.getId());
 
                 assertAll(
-                                () -> assertNotNull(matricula),
+                                () -> assertEquals(StatusMatricula.CONFIRMADA, matricula.getStatus()),
                                 () -> assertEquals(aluno.getId(), matricula.getIdAluno()),
                                 () -> assertEquals(turma.getId(), matricula.getIdTurma()),
                                 () -> assertEquals(1, controller.getMatriculas().size()));
         }
 
         @Test
-        @DisplayName("RF20: matrícula rejeitada quando turma está lotada")
-        void matriculaRejeitadaQuandoTurmaLotada() {
+        @DisplayName("RF21: matrícula fica em lista de espera quando turma está lotada")
+        void matriculaEmEsperaQuandoTurmaLotada() {
                 Turma turma = criarTurma("turma-1", "disc-calculo", 2);
-
-                // Duas matrículas já existentes — turma lotada
                 Matricula mat1 = new Matricula("mat-1", "outro-aluno-1", turma.getId());
                 Matricula mat2 = new Matricula("mat-2", "outro-aluno-2", turma.getId());
                 MatriculaController controller = criarController(
-                                List.of(mat1, mat2), List.of(turma), List.of(discCalculo));
+                                List.of(mat1, mat2),
+                                List.of(turma),
+                                List.of(discCalculo));
 
-                IllegalArgumentException erro = assertThrows(
-                                IllegalArgumentException.class,
-                                () -> controller.solicitarMatricula(turma.getId()));
+                Matricula matricula = controller.solicitarMatricula(turma.getId());
 
-                assertTrue(erro.getMessage().contains("Turma sem vagas disponíveis"));
+                assertAll(
+                                () -> assertEquals(StatusMatricula.EM_ESPERA, matricula.getStatus()),
+                                () -> assertEquals(List.of(matricula), controller.consultarListaEspera(turma.getId())));
         }
 
         @Test
         @DisplayName("RF20: matrícula confirmada no limite exato de vagas")
         void matriculaConfirmadaNoLimiteExatoDeVagas() {
                 Turma turma = criarTurma("turma-1", "disc-calculo", 1);
-                MatriculaController controller = criarController(
-                                List.of(), List.of(turma), List.of(discCalculo));
+                MatriculaController controller = criarController(List.of(), List.of(turma), List.of(discCalculo));
 
                 Matricula matricula = controller.solicitarMatricula(turma.getId());
 
                 assertAll(
-                                () -> assertNotNull(matricula),
+                                () -> assertEquals(StatusMatricula.CONFIRMADA, matricula.getStatus()),
                                 () -> assertEquals(1, controller.getMatriculas().size()));
         }
 
         @Test
-        @DisplayName("RF20: segunda matrícula rejeitada quando última vaga foi preenchida")
-        void segundaMatriculaRejeitadaQuandoUltimaVagaPreenchida() {
+        @DisplayName("RF21: segunda matrícula fica em espera quando última vaga foi preenchida")
+        void segundaMatriculaFicaEmEsperaQuandoUltimaVagaPreenchida() {
                 Turma turma = criarTurma("turma-1", "disc-calculo", 1);
                 Matricula existente = new Matricula("mat-1", "outro-aluno-1", turma.getId());
                 MatriculaController controller = criarController(
-                                List.of(existente), List.of(turma), List.of(discCalculo));
+                                List.of(existente),
+                                List.of(turma),
+                                List.of(discCalculo));
 
-                IllegalArgumentException erro = assertThrows(
-                                IllegalArgumentException.class,
-                                () -> controller.solicitarMatricula(turma.getId()));
+                Matricula matricula = controller.solicitarMatricula(turma.getId());
 
-                assertTrue(erro.getMessage().contains("Turma sem vagas disponíveis"));
+                assertEquals(StatusMatricula.EM_ESPERA, matricula.getStatus());
         }
 
         @Test
-        @DisplayName("RF20: matrícula confirmada quando disciplina não possui pré-requisitos")
+        @DisplayName("RF18/RF20: matrícula confirmada quando disciplina não possui pre-requisitos")
         void matriculaConfirmadaSemPreRequisitos() {
                 Turma turmaCalculo = criarTurma("turma-cal", "disc-calculo", 30);
-                MatriculaController controller = criarController(
-                                List.of(), List.of(turmaCalculo), List.of(discCalculo));
+                MatriculaController controller = criarController(List.of(), List.of(turmaCalculo), List.of(discCalculo));
 
                 Matricula matricula = controller.solicitarMatricula(turmaCalculo.getId());
 
-                assertNotNull(matricula);
+                assertEquals(StatusMatricula.CONFIRMADA, matricula.getStatus());
         }
 
         @Test
-        @DisplayName("RF20: matrícula confirmada quando pré-requisito atendido")
+        @DisplayName("RF18/RF20: matrícula confirmada quando pre-requisito atendido")
         void matriculaConfirmadaComPreRequisitoAtendido() {
                 Turma turmaCalculo = criarTurma("turma-cal", "disc-calculo", 30);
                 Turma turmaFisica = criarTurmaDiaDiferente("turma-fis", "disc-fisica", 30);
-
-                // Aluno já matriculado em Cálculo (pré-requisito de Física)
                 Matricula matCalculo = new Matricula("mat-cal", aluno.getId(), turmaCalculo.getId());
                 MatriculaController controller = criarController(
                                 List.of(matCalculo),
@@ -143,11 +149,11 @@ class ConfirmarMatriculaAutomaticaTest {
 
                 Matricula matricula = controller.solicitarMatricula(turmaFisica.getId());
 
-                assertNotNull(matricula);
+                assertEquals(StatusMatricula.CONFIRMADA, matricula.getStatus());
         }
 
         @Test
-        @DisplayName("RF20: matrícula rejeitada quando pré-requisito não atendido")
+        @DisplayName("RF18: matrícula rejeitada quando pre-requisito não atendido")
         void matriculaRejeitadaComPreRequisitoNaoAtendido() {
                 Turma turmaFisica = criarTurma("turma-fis", "disc-fisica", 30);
                 MatriculaController controller = criarController(
@@ -165,14 +171,12 @@ class ConfirmarMatriculaAutomaticaTest {
         }
 
         @Test
-        @DisplayName("RF20: matrícula confirmada com múltiplos pré-requisitos todos atendidos")
+        @DisplayName("RF18/RF20: matrícula confirmada com múltiplos pre-requisitos atendidos")
         void matriculaConfirmadaComMultiplosPreRequisitosAtendidos() {
                 Turma turmaCalculo = criarTurma("turma-cal", "disc-calculo", 30);
                 Turma turmaFisica = criarTurmaDiaDiferente("turma-fis", "disc-fisica", 30);
                 Turma turmaMecanica = criarTurma("turma-mec", "disc-mecanica", 30,
                                 DayOfWeek.WEDNESDAY, "14:00", "16:00");
-
-                // Aluno já matriculado em Cálculo e Física
                 Matricula matCalculo = new Matricula("mat-cal", aluno.getId(), turmaCalculo.getId());
                 Matricula matFisica = new Matricula("mat-fis", aluno.getId(), turmaFisica.getId());
                 MatriculaController controller = criarController(
@@ -182,16 +186,14 @@ class ConfirmarMatriculaAutomaticaTest {
 
                 Matricula matricula = controller.solicitarMatricula(turmaMecanica.getId());
 
-                assertNotNull(matricula);
+                assertEquals(StatusMatricula.CONFIRMADA, matricula.getStatus());
         }
 
         @Test
-        @DisplayName("RF20: matrícula rejeitada com múltiplos pré-requisitos quando um não atendido")
+        @DisplayName("RF18: matrícula rejeitada com múltiplos pre-requisitos quando um não atendido")
         void matriculaRejeitadaComMultiplosPreRequisitosUmNaoAtendido() {
                 Turma turmaCalculo = criarTurma("turma-cal", "disc-calculo", 30);
                 Turma turmaMecanica = criarTurmaDiaDiferente("turma-mec", "disc-mecanica", 30);
-
-                // Aluno matriculado apenas em Cálculo — falta Física
                 Matricula matCalculo = new Matricula("mat-cal", aluno.getId(), turmaCalculo.getId());
                 MatriculaController controller = criarController(
                                 List.of(matCalculo),

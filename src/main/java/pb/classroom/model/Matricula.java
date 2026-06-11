@@ -8,15 +8,25 @@ public class Matricula {
     private final String id;
     private final String idAluno;
     private final String idTurma;
+    private StatusMatricula status;
 
     public Matricula(String idAluno, String idTurma) {
-        this(UUID.randomUUID().toString(), idAluno, idTurma);
+        this(UUID.randomUUID().toString(), idAluno, idTurma, StatusMatricula.CONFIRMADA);
     }
 
     public Matricula(String id, String idAluno, String idTurma) {
+        this(id, idAluno, idTurma, StatusMatricula.CONFIRMADA);
+    }
+
+    public Matricula(String idAluno, String idTurma, StatusMatricula status) {
+        this(UUID.randomUUID().toString(), idAluno, idTurma, status);
+    }
+
+    public Matricula(String id, String idAluno, String idTurma, StatusMatricula status) {
         this.id = validarCampoObrigatorio(id, "id");
         this.idAluno = validarCampoObrigatorio(idAluno, "id do aluno");
         this.idTurma = validarCampoObrigatorio(idTurma, "id da turma");
+        setStatus(status);
     }
 
     public String getId() {
@@ -29,6 +39,25 @@ public class Matricula {
 
     public String getIdTurma() {
         return idTurma;
+    }
+
+    public StatusMatricula getStatus() {
+        return status;
+    }
+
+    public void setStatus(StatusMatricula status) {
+        if (status == null) {
+            throw new IllegalArgumentException("status da matrícula é obrigatório");
+        }
+        this.status = status;
+    }
+
+    public boolean isConfirmada() {
+        return status == StatusMatricula.CONFIRMADA;
+    }
+
+    public boolean isEmEspera() {
+        return status == StatusMatricula.EM_ESPERA;
     }
 
     private static String validarCampoObrigatorio(String valor, String campo) {

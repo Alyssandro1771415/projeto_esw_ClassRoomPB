@@ -1041,16 +1041,23 @@ Implementado em `MatriculaController`, `MatriculaRepository` e CLI. Uma nova mat
 
 Implementado em `MatriculaController`. Ao solicitar matricula, o sistema automaticamente valida:
 
-- Vagas disponiveis na turma (total de matriculas existentes vs `limiteVagas`).
+- Vagas disponiveis na turma (total de matriculas confirmadas vs `limiteVagas`).
 - Pre-requisitos da disciplina da turma (aluno deve possuir matricula em turma de cada disciplina pre-requisito).
 
-Se ambas as validacoes passarem (alem das validacoes ja existentes de turma disponivel, duplicidade e choque de horario), a matricula e confirmada automaticamente. Caso contrario, e rejeitada com mensagem descritiva.
+Se todas as validacoes passarem (alem das validacoes ja existentes de turma disponivel, duplicidade e choque de horario), a matricula e confirmada automaticamente quando houver vaga. Caso nao haja vaga, a solicitacao e registrada com status `EM_ESPERA`.
+
+### RF21 - Lista de espera
+
+Implementado em `MatriculaController` e `MatriculaRepository`. Quando nao ha vaga, a matricula fica com status `EM_ESPERA`; ao cancelar uma matricula confirmada, o primeiro aluno elegivel da lista de espera e promovido para `CONFIRMADA`.
+
+### RF22 - Cancelar matricula dentro do periodo permitido
+
+Implementado em `MatriculaController` e CLI. O aluno autenticado pode cancelar a propria matricula antes da data de inicio das aulas da turma. Apos essa data, o cancelamento e bloqueado.
 
 ## 23. Limitacoes Atuais
 
 Alguns pontos ainda nao estao implementados completamente:
 
-- Nao existe lista de espera.
 - Nao existe frequencia.
 - Nao existe notas, media, recuperacao ou situacao final.
 - Nao existe historico academico.

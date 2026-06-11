@@ -9,6 +9,7 @@ import pb.classroom.model.Disciplina;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.StatusMatricula;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 
@@ -42,7 +43,25 @@ class MatriculaRepositoryTest {
                 () -> assertEquals(1, carregadas.size()),
                 () -> assertEquals(matricula.getId(), carregadas.get(0).getId()),
                 () -> assertEquals(matricula.getIdAluno(), carregadas.get(0).getIdAluno()),
-                () -> assertEquals(matricula.getIdTurma(), carregadas.get(0).getIdTurma()));
+                () -> assertEquals(matricula.getIdTurma(), carregadas.get(0).getIdTurma()),
+                () -> assertEquals(StatusMatricula.CONFIRMADA, carregadas.get(0).getStatus()));
+    }
+
+    @Test
+    @DisplayName("salva e carrega status de lista de espera")
+    void salvaECarregaStatusDeListaDeEspera() {
+        Path arquivo = tempDir.resolve("armazenamento-status.json");
+        MatriculaRepository repository = new MatriculaRepository(arquivo);
+        Matricula matricula = new Matricula(
+                "mat-1",
+                "aluno-1",
+                "turma-1",
+                StatusMatricula.EM_ESPERA);
+
+        repository.salvarMatriculas(List.of(matricula));
+
+        List<Matricula> carregadas = repository.carregarMatriculas();
+        assertEquals(StatusMatricula.EM_ESPERA, carregadas.get(0).getStatus());
     }
 
     @Test

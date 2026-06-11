@@ -1,7 +1,9 @@
 package pb.classroom.controller;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import pb.classroom.model.BlocoHorario;
@@ -9,6 +11,7 @@ import pb.classroom.model.Disciplina;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.StatusMatricula;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 
@@ -27,7 +30,7 @@ public class MatriculaController {
             List<PeriodoLetivo> periodosLetivos,
             List<Disciplina> disciplinas) {
         if (autenticacaoController == null) {
-            throw new IllegalArgumentException("controle de autenticação é obrigatório");
+            throw new IllegalArgumentException("controle de autenticacao e obrigatorio");
         }
         if (matriculas == null || turmas == null || periodosLetivos == null || disciplinas == null) {
             throw new IllegalArgumentException("listas de apoio são obrigatórias");
@@ -39,10 +42,6 @@ public class MatriculaController {
         this.disciplinas = disciplinas;
     }
 
-    /**
-     * Construtor de compatibilidade — sem lista de disciplinas, desabilita
-     * validação de pré-requisitos.
-     */
     public MatriculaController(
             AutenticacaoController autenticacaoController,
             List<Matricula> matriculas,
@@ -51,27 +50,49 @@ public class MatriculaController {
         this(autenticacaoController, matriculas, turmas, periodosLetivos, new ArrayList<>());
     }
 
-    /**
-     * RF20 — Confirmar matrícula automática.
-     * Valida: aluno autenticado, turma disponível, duplicidade,
-     * vagas disponíveis, pré-requisitos atendidos e choque de horário.
-     */
     public Matricula solicitarMatricula(String idTurma) {
         Usuario aluno = validarAlunoAutenticado();
         Turma turma = buscarTurmaObrigatoria(idTurma);
         validarTurmaDisponivel(turma);
         validarMatriculaDuplicada(aluno.getId(), turma.getId());
-        validarVagasDisponiveis(turma);
         validarPreRequisitos(aluno.getId(), turma);
         validarChoqueHorario(aluno.getId(), turma);
 
-        Matricula matricula = new Matricula(aluno.getId(), turma.getId());
+        StatusMatricula status = possuiVagasDisponiveis(turma)
+                ? StatusMatricula.CONFIRMADA
+                : StatusMatricula.EM_ESPERA;
+        Matricula matricula = new Matricula(aluno.getId(), turma.getId(), status);
         matriculas.add(matricula);
+        return matricula;
+    }
+
+    public Matricula cancelarMatricula(String idMatricula) {
+        Usuario aluno = validarAlunoAutenticado();
+        Matricula matricula = buscarMatriculaDoAlunoObrigatoria(aluno.getId(), idMatricula);
+        Turma turma = buscarTurmaObrigatoria(matricula.getIdTurma());
+        validarCancelamentoPermitido(turma);
+
+        boolean eraConfirmada = matricula.isConfirmada();
+        removerMatricula(matricula);
+        if (eraConfirmada) {
+            promoverPrimeiraMatriculaEmEspera(turma);
+        }
         return matricula;
     }
 
     public List<Matricula> getMatriculas() {
         return Collections.unmodifiableList(matriculas);
+    }
+
+    public List<Matricula> consultarListaEspera(String idTurma) {
+        Turma turma = buscarTurmaObrigatoria(idTurma);
+        List<Matricula> listaEspera = new ArrayList<>();
+        for (Matricula matricula : matriculas) {
+            if (matricula.getIdTurma().equals(turma.getId()) && matricula.isEmEspera()) {
+                listaEspera.add(matricula);
+            }
+        }
+        return Collections.unmodifiableList(listaEspera);
     }
 
     private Usuario validarAlunoAutenticado() {
@@ -112,21 +133,19 @@ public class MatriculaController {
     private void validarMatriculaDuplicada(String idAluno, String idTurma) {
         for (Matricula matricula : matriculas) {
             if (matricula.getIdAluno().equals(idAluno) && matricula.getIdTurma().equals(idTurma)) {
-                throw new IllegalArgumentException("Aluno já está matriculado nesta turma.");
+                throw new IllegalArgumentException("Aluno já possui solicitação para esta turma.");
             }
         }
     }
 
-    private void validarVagasDisponiveis(Turma turma) {
+    private boolean possuiVagasDisponiveis(Turma turma) {
         int matriculados = 0;
         for (Matricula matricula : matriculas) {
-            if (matricula.getIdTurma().equals(turma.getId())) {
+            if (matricula.getIdTurma().equals(turma.getId()) && matricula.isConfirmada()) {
                 matriculados++;
             }
         }
-        if (matriculados >= turma.getLimiteVagas()) {
-            throw new IllegalArgumentException("Turma sem vagas disponíveis.");
-        }
+        return matriculados < turma.getLimiteVagas();
     }
 
     private void validarPreRequisitos(String idAluno, Turma turma) {
@@ -136,7 +155,7 @@ public class MatriculaController {
         }
 
         for (String idPreRequisito : disciplinaDaTurma.getPreRequisitosIds()) {
-            if (!alunoPossuiMatriculaEmDisciplina(idAluno, idPreRequisito)) {
+            if (!alunoPossuiMatriculaConfirmadaEmDisciplina(idAluno, idPreRequisito)) {
                 Disciplina preReq = buscarDisciplinaPorId(idPreRequisito);
                 String descricao = preReq != null ? preReq.getCodigo() : idPreRequisito;
                 throw new IllegalArgumentException("Pré-requisito não atendido: " + descricao);
@@ -144,14 +163,13 @@ public class MatriculaController {
         }
     }
 
-    private boolean alunoPossuiMatriculaEmDisciplina(String idAluno, String idDisciplina) {
+    private boolean alunoPossuiMatriculaConfirmadaEmDisciplina(String idAluno, String idDisciplina) {
         for (Matricula matricula : matriculas) {
-            if (!matricula.getIdAluno().equals(idAluno)) {
+            if (!matricula.getIdAluno().equals(idAluno) || !matricula.isConfirmada()) {
                 continue;
             }
             Turma turmaMatriculada = buscarTurmaPorId(matricula.getIdTurma());
-            if (turmaMatriculada != null
-                    && turmaMatriculada.getIdDisciplina().equals(idDisciplina)) {
+            if (turmaMatriculada != null && turmaMatriculada.getIdDisciplina().equals(idDisciplina)) {
                 return true;
             }
         }
@@ -169,7 +187,7 @@ public class MatriculaController {
 
     private void validarChoqueHorario(String idAluno, Turma novaTurma) {
         for (Matricula matricula : matriculas) {
-            if (!matricula.getIdAluno().equals(idAluno)) {
+            if (!matricula.getIdAluno().equals(idAluno) || !matricula.isConfirmada()) {
                 continue;
             }
 
@@ -204,5 +222,56 @@ public class MatriculaController {
         return existente.getDiaSemana() == novo.getDiaSemana()
                 && existente.getHoraInicio().isBefore(novo.getHoraFim())
                 && novo.getHoraInicio().isBefore(existente.getHoraFim());
+    }
+
+    private Matricula buscarMatriculaDoAlunoObrigatoria(String idAluno, String idMatricula) {
+        if (idMatricula == null || idMatricula.trim().isEmpty()) {
+            throw new IllegalArgumentException("id da matrícula é obrigatório");
+        }
+        for (Matricula matricula : matriculas) {
+            if (matricula.getId().equals(idMatricula.trim()) && matricula.getIdAluno().equals(idAluno)) {
+                return matricula;
+            }
+        }
+        throw new IllegalArgumentException("Matrícula não encontrada para o aluno autenticado.");
+    }
+
+    private void validarCancelamentoPermitido(Turma turma) {
+        if (!LocalDate.now().isBefore(turma.getDataInicioAulas())) {
+            throw new IllegalArgumentException(
+                    "Matrícula só pode ser cancelada antes do início das aulas da turma.");
+        }
+    }
+
+    private void removerMatricula(Matricula matriculaAlvo) {
+        Iterator<Matricula> iterator = matriculas.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().getId().equals(matriculaAlvo.getId())) {
+                iterator.remove();
+                return;
+            }
+        }
+    }
+
+    private void promoverPrimeiraMatriculaEmEspera(Turma turma) {
+        for (Matricula matricula : matriculas) {
+            if (!matricula.getIdTurma().equals(turma.getId()) || !matricula.isEmEspera()) {
+                continue;
+            }
+            if (possuiVagasDisponiveis(turma) && alunoPodeSerPromovido(matricula.getIdAluno(), turma)) {
+                matricula.setStatus(StatusMatricula.CONFIRMADA);
+                return;
+            }
+        }
+    }
+
+    private boolean alunoPodeSerPromovido(String idAluno, Turma turma) {
+        try {
+            validarPreRequisitos(idAluno, turma);
+            validarChoqueHorario(idAluno, turma);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }

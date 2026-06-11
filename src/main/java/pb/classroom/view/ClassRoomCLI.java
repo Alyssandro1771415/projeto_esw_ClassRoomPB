@@ -178,6 +178,9 @@ public class ClassRoomCLI {
                 case "14":
                     ofertarTurma();
                     break;
+                case "15":
+                    cancelarMatricula();
+                    break;
                 case "16":
                     alterarTurma();
                     break;
@@ -250,6 +253,7 @@ public class ClassRoomCLI {
                 break;
             case ALUNO:
                 System.out.println("6 - Listar disciplinas");
+                System.out.println("15 - Cancelar matrícula");
                 System.out.println("7 - Listar turmas");
                 System.out.println("8 - Solicitar matrícula");
                 System.out.println("10 - Listar períodos letivos");
@@ -540,6 +544,39 @@ public class ClassRoomCLI {
             matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
             System.out.println("Matrícula realizada com sucesso.");
             System.out.println("ID da matrícula: " + matricula.getId());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private void cancelarMatricula() {
+        if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            System.out.println("Apenas alunos podem cancelar matrícula.");
+            return;
+        }
+
+        Usuario aluno = autenticacaoController.getUsuarioLogado();
+        boolean encontrou = false;
+        System.out.println("Matrículas do aluno:");
+        for (Matricula matricula : matriculaController.getMatriculas()) {
+            if (matricula.getIdAluno().equals(aluno.getId())) {
+                encontrou = true;
+                System.out.println(matricula.getId() + " - turma "
+                        + matricula.getIdTurma() + " - " + matricula.getStatus());
+            }
+        }
+
+        if (!encontrou) {
+            System.out.println("Nenhuma matrícula encontrada.");
+            return;
+        }
+
+        String idMatricula = lerLinha("ID da matrícula: ");
+        try {
+            Matricula cancelada = matriculaController.cancelarMatricula(idMatricula);
+            matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
+            System.out.println("Matrícula cancelada com sucesso.");
+            System.out.println("ID da matrícula: " + cancelada.getId());
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         }
