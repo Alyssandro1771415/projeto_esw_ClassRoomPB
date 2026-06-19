@@ -4,13 +4,16 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import pb.classroom.controller.AutenticacaoController;
 import pb.classroom.controller.CursoController;
 import pb.classroom.controller.DisciplinaController;
 import pb.classroom.controller.MatriculaController;
 import pb.classroom.controller.PeriodoLetivoController;
+import pb.classroom.controller.PresencaController;
 import pb.classroom.controller.TurmaController;
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
@@ -18,12 +21,14 @@ import pb.classroom.model.Disciplina;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.RegistroPresenca;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
 import pb.classroom.repository.MatriculaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
+import pb.classroom.repository.PresencaRepository;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
 
@@ -36,12 +41,14 @@ public class ClassRoomCLI {
   private final PeriodoLetivoController periodoLetivoController;
   private final TurmaController turmaController;
   private final MatriculaController matriculaController;
+  private final PresencaController presencaController;
   private final UsuarioRepository usuarioRepository;
   private final CursoRepository cursoRepository;
   private final DisciplinaRepository disciplinaRepository;
   private final PeriodoLetivoRepository periodoLetivoRepository;
   private final TurmaRepository turmaRepository;
   private final MatriculaRepository matriculaRepository;
+  private final PresencaRepository presencaRepository;
 
   public ClassRoomCLI() {
     this(
@@ -51,7 +58,8 @@ public class ClassRoomCLI {
         new CursoRepository(),
         new PeriodoLetivoRepository(),
         new TurmaRepository(),
-        new MatriculaRepository());
+        new MatriculaRepository(),
+        new PresencaRepository());
   }
 
   ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
@@ -62,7 +70,8 @@ public class ClassRoomCLI {
         new CursoRepository(),
         new PeriodoLetivoRepository(),
         new TurmaRepository(),
-        new MatriculaRepository());
+        new MatriculaRepository(),
+        new PresencaRepository());
   }
 
   ClassRoomCLI(
@@ -79,7 +88,8 @@ public class ClassRoomCLI {
         cursoRepository,
         periodoLetivoRepository,
         turmaRepository,
-        new MatriculaRepository());
+        new MatriculaRepository(),
+        new PresencaRepository());
   }
 
   ClassRoomCLI(
@@ -90,6 +100,33 @@ public class ClassRoomCLI {
       PeriodoLetivoRepository periodoLetivoRepository,
       TurmaRepository turmaRepository,
       MatriculaRepository matriculaRepository) {
+    this(
+        scanner,
+        usuarioRepository,
+        disciplinaRepository,
+        cursoRepository,
+        periodoLetivoRepository,
+        turmaRepository,
+        matriculaRepository,
+        new PresencaRepository(
+            matriculaRepository.getCaminhoArquivo() != null
+                ? (matriculaRepository.getCaminhoArquivo().getFileName().toString().equals("armazenamento.json")
+                    ? matriculaRepository.getCaminhoArquivo()
+                    : (matriculaRepository.getCaminhoArquivo().getParent() != null
+                        ? matriculaRepository.getCaminhoArquivo().getParent().resolve("presencas.json")
+                        : java.nio.file.Paths.get("presencas.json")))
+                : java.nio.file.Paths.get("presencas.json")));
+  }
+
+  ClassRoomCLI(
+      Scanner scanner,
+      UsuarioRepository usuarioRepository,
+      DisciplinaRepository disciplinaRepository,
+      CursoRepository cursoRepository,
+      PeriodoLetivoRepository periodoLetivoRepository,
+      TurmaRepository turmaRepository,
+      MatriculaRepository matriculaRepository,
+      PresencaRepository presencaRepository) {
     this.scanner = scanner;
     this.usuarioRepository = usuarioRepository;
     this.disciplinaRepository = disciplinaRepository;
@@ -97,6 +134,7 @@ public class ClassRoomCLI {
     this.periodoLetivoRepository = periodoLetivoRepository;
     this.turmaRepository = turmaRepository;
     this.matriculaRepository = matriculaRepository;
+    this.presencaRepository = presencaRepository;
     this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
     this.cursoController =
         new CursoController(autenticacaoController, cursoRepository.carregarCursos());
@@ -122,6 +160,12 @@ public class ClassRoomCLI {
             turmaController.getTurmas(),
             periodoLetivoController.getPeriodosLetivos(),
             disciplinaController.getDisciplinas());
+    this.presencaController =
+        new PresencaController(
+            autenticacaoController,
+            presencaRepository.carregarPresencas(),
+            turmaController.getTurmas(),
+            matriculaController.getMatriculas());
   }
 
   public void iniciar() {
@@ -191,6 +235,23 @@ public class ClassRoomCLI {
         case "18":
           cadastrarCurso();
           break;
+        case "19":
+          consultarListaEspera();
+          break;
+        case "20":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            removerAlunoListaEspera();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+            registrarPresenca();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            consultarMinhasPresencas();
+          } else {
+            System.out.println("Opção inválida.");
+          }
+          break;
+        case "21":
+          consultarPresencasPorTurma();
+          break;
         case "0":
           executando = false;
           System.out.println("Sistema encerrado.");
@@ -246,11 +307,17 @@ public class ClassRoomCLI {
         System.out.println("14 - Ofertar turma");
         System.out.println("16 - Alterar turma");
         System.out.println("17 - Cancelar turma");
+        System.out.println("19 - Consultar lista de espera");
+        System.out.println("20 - Remover aluno da lista de espera");
+        System.out.println("21 - Consultar presenças por turma");
         break;
       case PROFESSOR:
         System.out.println("6 - Listar disciplinas");
         System.out.println("7 - Listar turmas");
         System.out.println("10 - Listar períodos letivos");
+        System.out.println("19 - Consultar lista de espera");
+        System.out.println("20 - Registrar presença/falta");
+        System.out.println("21 - Consultar presenças por turma");
         break;
       case ALUNO:
         System.out.println("6 - Listar disciplinas");
@@ -258,6 +325,8 @@ public class ClassRoomCLI {
         System.out.println("7 - Listar turmas");
         System.out.println("8 - Solicitar matrícula");
         System.out.println("10 - Listar períodos letivos");
+        System.out.println("19 - Consultar posição na lista de espera");
+        System.out.println("20 - Consultar minhas presenças");
         break;
       default:
         break;
@@ -927,5 +996,198 @@ public class ClassRoomCLI {
   private void limparTerminal() {
     System.out.print("\033[H\033[2J");
     System.out.flush();
+  }
+
+  // ==================== RF23 – Lista de Espera ====================
+
+  private void consultarListaEspera() {
+    if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      consultarPosicaoListaEspera();
+      return;
+    }
+
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)
+        && !usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Funcionalidade não disponível para seu perfil.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<Matricula> listaEspera = matriculaController.consultarListaEsperaCompleta(idTurma);
+      if (listaEspera.isEmpty()) {
+        System.out.println("Nenhum aluno na lista de espera desta turma.");
+        return;
+      }
+
+      System.out.println("Lista de espera da turma " + idTurma + ":");
+      int posicao = 1;
+      for (Matricula matricula : listaEspera) {
+        System.out.println(
+            posicao + "ª posição - Matrícula ID: " + matricula.getId()
+                + " - Aluno ID: " + matricula.getIdAluno());
+        posicao++;
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarPosicaoListaEspera() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar sua posição na lista de espera.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      int posicao = matriculaController.consultarPosicaoAluno(idTurma);
+      if (posicao == 0) {
+        System.out.println("Você não está na lista de espera desta turma.");
+      } else {
+        System.out.println("Sua posição na lista de espera: " + posicao + "ª posição.");
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void removerAlunoListaEspera() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem remover alunos da lista de espera.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<Matricula> listaEspera = matriculaController.consultarListaEsperaCompleta(idTurma);
+      if (listaEspera.isEmpty()) {
+        System.out.println("Nenhum aluno na lista de espera desta turma.");
+        return;
+      }
+
+      System.out.println("Alunos na lista de espera:");
+      int posicao = 1;
+      for (Matricula matricula : listaEspera) {
+        System.out.println(
+            posicao + "ª - ID matrícula: " + matricula.getId()
+                + " - Aluno ID: " + matricula.getIdAluno());
+        posicao++;
+      }
+
+      String idMatricula = lerLinha("ID da matrícula a remover: ");
+      Matricula removida = matriculaController.removerAlunoListaEspera(idTurma, idMatricula);
+      matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
+      System.out.println("Aluno removido da lista de espera com sucesso.");
+      System.out.println("ID da matrícula: " + removida.getId());
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  // ==================== RF27 – Presença ====================
+
+  private void registrarPresenca() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Apenas professores podem registrar presença.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+    String dataTexto = lerLinha("Data da aula (AAAA-MM-DD): ");
+
+    try {
+      LocalDate data = LocalDate.parse(dataTexto);
+
+      List<Matricula> matriculasConfirmadas = new ArrayList<>();
+      for (Matricula matricula : matriculaController.getMatriculas()) {
+        if (matricula.getIdTurma().equals(idTurma) && matricula.isConfirmada()) {
+          matriculasConfirmadas.add(matricula);
+        }
+      }
+
+      if (matriculasConfirmadas.isEmpty()) {
+        System.out.println("Nenhum aluno matriculado (confirmado) nesta turma.");
+        return;
+      }
+
+      System.out.println("Registre P (presente) ou F (falta) para cada aluno:");
+      Map<String, Boolean> presencas = new LinkedHashMap<>();
+      for (Matricula matricula : matriculasConfirmadas) {
+        String resposta =
+            lerLinha("Aluno " + matricula.getIdAluno() + " (P/F): ").toUpperCase();
+        presencas.put(matricula.getIdAluno(), resposta.equals("P"));
+      }
+
+      List<RegistroPresenca> registrados =
+          presencaController.registrarPresenca(idTurma, data, presencas);
+      presencaRepository.salvarPresencas(presencaController.getRegistrosPresenca());
+      System.out.println("Presença registrada com sucesso para " + registrados.size() + " aluno(s).");
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    } catch (Exception e) {
+      System.out.println("Erro ao registrar presença: " + e.getMessage());
+    }
+  }
+
+  private void consultarPresencasPorTurma() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)
+        && !usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Funcionalidade não disponível para seu perfil.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<RegistroPresenca> presencas = presencaController.consultarPresencasPorTurma(idTurma);
+      if (presencas.isEmpty()) {
+        System.out.println("Nenhum registro de presença para esta turma.");
+        return;
+      }
+
+      System.out.println("Registros de presença da turma " + idTurma + ":");
+      for (RegistroPresenca registro : presencas) {
+        System.out.println(
+            "Data: " + registro.getData()
+                + " - Aluno: " + registro.getIdAluno()
+                + " - Status: " + registro.getStatus());
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarMinhasPresencas() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar suas próprias presenças.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<RegistroPresenca> presencas = presencaController.consultarPresencasDoAluno(idTurma);
+      if (presencas.isEmpty()) {
+        System.out.println("Nenhum registro de presença encontrado para esta turma.");
+        return;
+      }
+
+      System.out.println("Suas presenças na turma " + idTurma + ":");
+      for (RegistroPresenca registro : presencas) {
+        System.out.println("Data: " + registro.getData() + " - Status: " + registro.getStatus());
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
   }
 }

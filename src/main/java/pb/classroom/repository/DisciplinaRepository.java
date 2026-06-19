@@ -61,7 +61,8 @@ public class DisciplinaRepository {
               cursosJson,
               periodosLetivosJson,
               turmasJson,
-              matriculasJson);
+              matriculasJson,
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível salvar as disciplinas.", e);

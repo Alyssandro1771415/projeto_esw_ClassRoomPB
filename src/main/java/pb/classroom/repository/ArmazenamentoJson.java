@@ -54,6 +54,19 @@ final class ArmazenamentoJson {
       String periodosLetivosJson,
       String turmasJson,
       String matriculasJson) {
+    return montarDocumento(
+        usuariosJson, disciplinasJson, cursosJson, periodosLetivosJson, turmasJson,
+        matriculasJson, "[]");
+  }
+
+  static String montarDocumento(
+      String usuariosJson,
+      String disciplinasJson,
+      String cursosJson,
+      String periodosLetivosJson,
+      String turmasJson,
+      String matriculasJson,
+      String presencasJson) {
     return "{\n"
         + "  \"usuarios\": "
         + normalizarArray(usuariosJson)
@@ -72,6 +85,9 @@ final class ArmazenamentoJson {
         + ",\n"
         + "  \"matriculas\": "
         + normalizarArray(matriculasJson)
+        + ",\n"
+        + "  \"presencas\": "
+        + normalizarArray(presencasJson)
         + "\n"
         + "}\n";
   }

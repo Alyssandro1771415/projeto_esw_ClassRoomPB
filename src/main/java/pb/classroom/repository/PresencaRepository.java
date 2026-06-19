@@ -5,47 +5,44 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import pb.classroom.model.Matricula;
-import pb.classroom.model.StatusMatricula;
+import pb.classroom.model.RegistroPresenca;
+import pb.classroom.model.StatusPresenca;
 
-public class MatriculaRepository {
+public class PresencaRepository {
 
   private static final Pattern OBJETO_JSON = Pattern.compile("\\{([^{}]*)\\}");
   private static final String ARQUIVO_PADRAO = "armazenamento_interno.json";
 
   private final Path caminhoArquivo;
 
-  public MatriculaRepository() {
+  public PresencaRepository() {
     this(Paths.get(ARQUIVO_PADRAO));
   }
 
-  public MatriculaRepository(Path caminhoArquivo) {
+  public PresencaRepository(Path caminhoArquivo) {
     this.caminhoArquivo = caminhoArquivo;
   }
 
-  public Path getCaminhoArquivo() {
-    return caminhoArquivo;
-  }
-
-  public List<Matricula> carregarMatriculas() {
+  public List<RegistroPresenca> carregarPresencas() {
     try {
       if (!Files.exists(caminhoArquivo)) {
         return new ArrayList<>();
       }
 
       String conteudo = new String(Files.readAllBytes(caminhoArquivo), StandardCharsets.UTF_8);
-      String matriculasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudo, "matriculas");
-      return converterJsonParaMatriculas(matriculasJson);
+      String presencasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudo, "presencas");
+      return converterJsonParaPresencas(presencasJson);
     } catch (IOException e) {
-      throw new IllegalStateException("Não foi possível carregar as matrículas.", e);
+      throw new IllegalStateException("Não foi possível carregar as presenças.", e);
     }
   }
 
-  public void salvarMatriculas(List<Matricula> matriculas) {
+  public void salvarPresencas(List<RegistroPresenca> presencas) {
     try {
       String conteudoAtual = "";
       if (Files.exists(caminhoArquivo)) {
@@ -59,47 +56,50 @@ public class MatriculaRepository {
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "cursos"),
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "periodosLetivos"),
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "turmas"),
-              converterMatriculasParaJson(matriculas),
-              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"));
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "matriculas"),
+              converterPresencasParaJson(presencas));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
-      throw new IllegalStateException("Não foi possível salvar as matrículas.", e);
+      throw new IllegalStateException("Não foi possível salvar as presenças.", e);
     }
   }
 
-  private List<Matricula> converterJsonParaMatriculas(String conteudo) {
-    List<Matricula> matriculas = new ArrayList<>();
+  private List<RegistroPresenca> converterJsonParaPresencas(String conteudo) {
+    List<RegistroPresenca> presencas = new ArrayList<>();
     Matcher matcher = OBJETO_JSON.matcher(conteudo);
 
     while (matcher.find()) {
       String objeto = matcher.group(1);
-      if (!objeto.contains("\"idAluno\"") || !objeto.contains("\"idTurma\"")) {
+      if (!objeto.contains("\"idTurma\"") || !objeto.contains("\"idAluno\"")
+          || !objeto.contains("\"data\"")) {
         continue;
       }
-      matriculas.add(
-          new Matricula(
+      presencas.add(
+          new RegistroPresenca(
               obterTexto(objeto, "id"),
-              obterTexto(objeto, "idAluno"),
               obterTexto(objeto, "idTurma"),
-              StatusMatricula.valueOf(
-                  obterTextoOuPadrao(objeto, "status", StatusMatricula.CONFIRMADA.name()))));
+              obterTexto(objeto, "idAluno"),
+              LocalDate.parse(obterTexto(objeto, "data")),
+              StatusPresenca.valueOf(
+                  obterTextoOuPadrao(objeto, "status", StatusPresenca.PRESENTE.name()))));
     }
-    return matriculas;
+    return presencas;
   }
 
-  private String converterMatriculasParaJson(List<Matricula> matriculas) {
+  private String converterPresencasParaJson(List<RegistroPresenca> presencas) {
     StringBuilder json = new StringBuilder();
     json.append("[\n");
 
-    for (int i = 0; i < matriculas.size(); i++) {
-      Matricula matricula = matriculas.get(i);
+    for (int i = 0; i < presencas.size(); i++) {
+      RegistroPresenca presenca = presencas.get(i);
       json.append("    {\n");
-      json.append("      \"id\": \"").append(escapar(matricula.getId())).append("\",\n");
-      json.append("      \"idAluno\": \"").append(escapar(matricula.getIdAluno())).append("\",\n");
-      json.append("      \"idTurma\": \"").append(escapar(matricula.getIdTurma())).append("\",\n");
-      json.append("      \"status\": \"").append(matricula.getStatus().name()).append("\"\n");
+      json.append("      \"id\": \"").append(escapar(presenca.getId())).append("\",\n");
+      json.append("      \"idTurma\": \"").append(escapar(presenca.getIdTurma())).append("\",\n");
+      json.append("      \"idAluno\": \"").append(escapar(presenca.getIdAluno())).append("\",\n");
+      json.append("      \"data\": \"").append(presenca.getData()).append("\",\n");
+      json.append("      \"status\": \"").append(presenca.getStatus().name()).append("\"\n");
       json.append("    }");
-      if (i < matriculas.size() - 1) {
+      if (i < presencas.size() - 1) {
         json.append(",");
       }
       json.append("\n");

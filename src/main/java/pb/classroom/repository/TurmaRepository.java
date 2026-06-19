@@ -64,7 +64,8 @@ public class TurmaRepository {
               cursosJson,
               periodosLetivosJson,
               converterTurmasParaJson(turmas),
-              matriculasJson);
+              matriculasJson,
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível salvar as turmas.", e);

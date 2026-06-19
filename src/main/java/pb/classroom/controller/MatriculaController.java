@@ -93,6 +93,50 @@ public class MatriculaController {
     return Collections.unmodifiableList(listaEspera);
   }
 
+  /**
+   * RF23: Consulta a posição do aluno autenticado na lista de espera de uma turma. Retorna 0 se o
+   * aluno não está na lista de espera.
+   */
+  public int consultarPosicaoAluno(String idTurma) {
+    Usuario aluno = validarAlunoAutenticado();
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    int posicao = 1;
+    for (Matricula matricula : matriculas) {
+      if (matricula.getIdTurma().equals(turma.getId()) && matricula.isEmEspera()) {
+        if (matricula.getIdAluno().equals(aluno.getId())) {
+          return posicao;
+        }
+        posicao++;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * RF23: Coordenador remove aluno da lista de espera de uma turma. Apenas matrículas com status
+   * EM_ESPERA podem ser removidas por este método.
+   */
+  public Matricula removerAlunoListaEspera(String idTurma, String idMatricula) {
+    validarCoordenadorAutenticado();
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    Matricula matriculaAlvo = buscarMatriculaPorId(idMatricula);
+    if (!matriculaAlvo.getIdTurma().equals(turma.getId())) {
+      throw new IllegalArgumentException("Matrícula não pertence à turma informada.");
+    }
+    if (!matriculaAlvo.isEmEspera()) {
+      throw new IllegalArgumentException(
+          "Apenas matrículas em lista de espera podem ser removidas por este método.");
+    }
+    removerMatricula(matriculaAlvo);
+    return matriculaAlvo;
+  }
+
+  /** RF23: Consulta a lista de espera completa. Apenas coordenador ou professor da turma. */
+  public List<Matricula> consultarListaEsperaCompleta(String idTurma) {
+    validarCoordenadorOuProfessorDaTurma(idTurma);
+    return consultarListaEspera(idTurma);
+  }
+
   private Usuario validarAlunoAutenticado() {
     if (!autenticacaoController.isAutenticado()
         || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.ALUNO) {
@@ -271,5 +315,45 @@ public class MatriculaController {
     } catch (IllegalArgumentException e) {
       return false;
     }
+  }
+
+  private void validarCoordenadorAutenticado() {
+    if (!autenticacaoController.isAutenticado()
+        || autenticacaoController.getUsuarioLogado().getPerfil() != PerfilUsuario.COORDENADOR) {
+      throw new IllegalArgumentException("Apenas coordenadores podem realizar esta operação.");
+    }
+  }
+
+  private void validarCoordenadorOuProfessorDaTurma(String idTurma) {
+    if (!autenticacaoController.isAutenticado()) {
+      throw new IllegalArgumentException(
+          "Apenas coordenadores ou o professor da turma podem consultar a lista de espera.");
+    }
+    PerfilUsuario perfil = autenticacaoController.getUsuarioLogado().getPerfil();
+    if (perfil == PerfilUsuario.COORDENADOR) {
+      return;
+    }
+    if (perfil == PerfilUsuario.PROFESSOR) {
+      Turma turma = buscarTurmaObrigatoria(idTurma);
+      if (turma.getIdProfessor().equals(autenticacaoController.getUsuarioLogado().getId())) {
+        return;
+      }
+      throw new IllegalArgumentException(
+          "Professor só pode consultar lista de espera de suas próprias turmas.");
+    }
+    throw new IllegalArgumentException(
+        "Apenas coordenadores ou o professor da turma podem consultar a lista de espera.");
+  }
+
+  private Matricula buscarMatriculaPorId(String idMatricula) {
+    if (idMatricula == null || idMatricula.trim().isEmpty()) {
+      throw new IllegalArgumentException("id da matrícula é obrigatório");
+    }
+    for (Matricula matricula : matriculas) {
+      if (matricula.getId().equals(idMatricula.trim())) {
+        return matricula;
+      }
+    }
+    throw new IllegalArgumentException("Matrícula não encontrada: " + idMatricula);
   }
 }
