@@ -18,6 +18,7 @@ import pb.classroom.controller.TurmaController;
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
+import pb.classroom.model.FrequenciaAluno;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
@@ -259,6 +260,16 @@ public class ClassRoomCLI {
         case "21":
           consultarPresencasPorTurma();
           break;
+        case "22":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            chamarProximosAlunosListaEspera();
+          } else {
+            consultarFrequencia();
+          }
+          break;
+        case "23":
+          consultarFrequencia();
+          break;
         case "0":
           executando = false;
           System.out.println("Sistema encerrado.");
@@ -317,6 +328,8 @@ public class ClassRoomCLI {
         System.out.println("19 - Consultar lista de espera");
         System.out.println("20 - Remover aluno da lista de espera");
         System.out.println("21 - Consultar presenças por turma");
+        System.out.println("22 - Chamar próximos alunos da lista de espera");
+        System.out.println("23 - Consultar percentual de frequência");
         break;
       case PROFESSOR:
         System.out.println("6 - Listar disciplinas");
@@ -325,6 +338,7 @@ public class ClassRoomCLI {
         System.out.println("19 - Consultar lista de espera");
         System.out.println("20 - Registrar presença/falta");
         System.out.println("21 - Consultar presenças por turma");
+        System.out.println("23 - Consultar percentual de frequência");
         break;
       case ALUNO:
         System.out.println("6 - Listar disciplinas");
@@ -334,6 +348,7 @@ public class ClassRoomCLI {
         System.out.println("10 - Listar períodos letivos");
         System.out.println("19 - Consultar posição na lista de espera");
         System.out.println("20 - Consultar minhas presenças");
+        System.out.println("22 - Consultar meu percentual de frequência");
         break;
       default:
         break;
@@ -674,10 +689,30 @@ public class ClassRoomCLI {
       LocalDate dataInicio = LocalDate.parse(dataInicioTexto);
       List<BlocoHorario> horarios = lerHorariosDaTurma();
 
+      int limiteAnterior = 0;
+      for (Turma turmaExistente : turmaController.getTurmas()) {
+        if (turmaExistente.getId().equals(idTurma)) {
+          limiteAnterior = turmaExistente.getLimiteVagas();
+          break;
+        }
+      }
+
       Turma turma =
           turmaController.alterarTurma(
               idTurma, idProfessor, limiteVagas, sala, dataInicio, horarios);
       turmaRepository.salvarTurmas(turmaController.getTurmas());
+
+      if (limiteVagas > limiteAnterior) {
+        List<Matricula> promovidos =
+            matriculaController.processarChamadaAutomaticaListaEspera(idTurma);
+        if (!promovidos.isEmpty()) {
+          matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
+          System.out.println(
+              "RF24: "
+                  + promovidos.size()
+                  + " aluno(s) chamado(s) automaticamente da lista de espera.");
+        }
+      }
 
       System.out.println("Turma alterada com sucesso.");
       exibirTurma(turma);
@@ -1208,5 +1243,95 @@ public class ClassRoomCLI {
     } catch (IllegalArgumentException e) {
       System.out.println(e.getMessage());
     }
+  }
+
+  // ==================== RF24 – Chamada automática da lista de espera ====================
+
+  private void chamarProximosAlunosListaEspera() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem chamar alunos da lista de espera.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<Matricula> promovidos =
+          matriculaController.chamarProximosAlunosListaEsperaManualmente(idTurma);
+      matriculaRepository.salvarMatriculas(matriculaController.getMatriculas());
+      System.out.println(
+          promovidos.size() + " aluno(s) chamado(s) da lista de espera com sucesso:");
+      for (Matricula matricula : promovidos) {
+        System.out.println(
+            "Matrícula ID: " + matricula.getId() + " - Aluno ID: " + matricula.getIdAluno());
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  // ==================== RF28 – Frequência ====================
+
+  private void consultarFrequencia() {
+    if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      consultarMinhaFrequencia();
+      return;
+    }
+
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)
+        && !usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Funcionalidade não disponível para seu perfil.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      List<FrequenciaAluno> frequencias = presencaController.calcularFrequenciaPorTurma(idTurma);
+      if (frequencias.isEmpty()) {
+        System.out.println("Nenhum aluno matriculado confirmado nesta turma.");
+        return;
+      }
+
+      System.out.println("Percentual de frequência da turma " + idTurma + ":");
+      for (FrequenciaAluno frequencia : frequencias) {
+        exibirFrequencia(frequencia);
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarMinhaFrequencia() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar o próprio percentual de frequência.");
+      return;
+    }
+
+    listarTurmas();
+    String idTurma = lerLinha("ID da turma: ");
+
+    try {
+      FrequenciaAluno frequencia = presencaController.consultarMinhaFrequencia(idTurma);
+      System.out.println("Seu percentual de frequência na turma " + idTurma + ":");
+      exibirFrequencia(frequencia);
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void exibirFrequencia(FrequenciaAluno frequencia) {
+    System.out.println(
+        "Aluno: "
+            + frequencia.getIdAluno()
+            + " - Presenças: "
+            + frequencia.getTotalPresencas()
+            + "/"
+            + frequencia.getTotalAulasRegistradas()
+            + " - Frequência: "
+            + String.format("%.1f", frequencia.getPercentual())
+            + "%");
   }
 }

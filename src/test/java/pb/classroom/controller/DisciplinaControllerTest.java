@@ -96,4 +96,115 @@ class DisciplinaControllerTest {
 
     assertEquals(novoCurso.getId(), disciplina.getIdCurso());
   }
+
+  @Test
+  @DisplayName("nao permite codigo duplicado")
+  void naoPermiteCodigoDuplicado() {
+    autenticacaoController.login("C001", SENHA);
+    disciplinaController.cadastrarDisciplina(
+        "ESW101", "Projeto de Software", 60, 4, curso.getId(), List.of());
+
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                disciplinaController.cadastrarDisciplina(
+                    "esw101", "Outra Disciplina", 40, 3, curso.getId(), List.of()));
+
+    assertEquals("Já existe disciplina cadastrada com esse código.", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("codigo em branco nao cadastra disciplina")
+  void codigoEmBrancoNaoCadastraDisciplina() {
+    autenticacaoController.login("C001", SENHA);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            disciplinaController.cadastrarDisciplina(
+                "   ", "Arquitetura", 60, 4, curso.getId(), List.of()));
+  }
+
+  @Test
+  @DisplayName("id do curso em branco nao cadastra disciplina")
+  void idCursoEmBrancoNaoCadastraDisciplina() {
+    autenticacaoController.login("C001", SENHA);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            disciplinaController.cadastrarDisciplina(
+                "ESW104", "Arquitetura", 60, 4, "  ", List.of()));
+  }
+
+  @Test
+  @DisplayName("usuario nao autenticado nao cadastra disciplina")
+  void usuarioNaoAutenticadoNaoCadastraDisciplina() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            disciplinaController.cadastrarDisciplina(
+                "ESW105", "Arquitetura", 60, 4, curso.getId(), List.of()));
+  }
+
+  @Test
+  @DisplayName("cadastra disciplina com pre-requisito existente")
+  void cadastraDisciplinaComPreRequisitoExistente() {
+    autenticacaoController.login("C001", SENHA);
+    Disciplina base =
+        disciplinaController.cadastrarDisciplina(
+            "ESW100", "Introducao", 40, 2, curso.getId(), List.of());
+
+    Disciplina avancada =
+        disciplinaController.cadastrarDisciplina(
+            "ESW200", "Projeto Avancado", 60, 4, curso.getId(), List.of(base.getId()));
+
+    assertEquals(List.of(base.getId()), avancada.getPreRequisitosIds());
+  }
+
+  @Test
+  @DisplayName("pre-requisito inexistente impede cadastro")
+  void preRequisitoInexistenteImpedeCadastro() {
+    autenticacaoController.login("C001", SENHA);
+
+    IllegalArgumentException ex =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                disciplinaController.cadastrarDisciplina(
+                    "ESW201", "Avancada", 60, 4, curso.getId(), List.of("disc-inexistente")));
+
+    assertEquals("Pré-requisito não encontrado: disc-inexistente", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("getDisciplinas retorna lista imutavel")
+  void getDisciplinasRetornaListaImutavel() {
+    autenticacaoController.login("C001", SENHA);
+    disciplinaController.cadastrarDisciplina(
+        "ESW101", "Projeto de Software", 60, 4, curso.getId(), List.of());
+
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> disciplinaController.getDisciplinas().add(new Disciplina("x", "x", 1, 1, "c")));
+  }
+
+  @Test
+  @DisplayName("construtor rejeita dependencias nulas")
+  void construtorRejeitaDependenciasNulas() {
+    assertAll(
+        () ->
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new DisciplinaController(null, List.of(), List.of(curso))),
+        () ->
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new DisciplinaController(autenticacaoController, null, List.of(curso))),
+        () ->
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new DisciplinaController(autenticacaoController, List.of(), null)));
+  }
 }

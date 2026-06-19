@@ -22,6 +22,7 @@ import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
 import pb.classroom.repository.MatriculaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
+import pb.classroom.repository.PresencaRepository;
 import pb.classroom.repository.TurmaRepository;
 import pb.classroom.repository.UsuarioRepository;
 
@@ -179,6 +180,95 @@ class ClassRoomCLIFluxosIntegradosTest {
     assertTrue(saida.contains("Lista de espera da turma turma-1:"));
     assertTrue(primeiraPosicao >= 0);
     assertTrue(segundaPosicao > primeiraPosicao);
+  }
+
+  @Test
+  @DisplayName("RF24: coordenador chama próximo aluno da lista de espera pela CLI")
+  void coordenadorChamaProximoAlunoListaEsperaPelaCli() throws Exception {
+    Path arquivo = criarArquivoRf24();
+    String saida =
+        executar(
+            arquivo, "1", "coordenador@classroompb.com", "123456", "", "22", "turma-1", "", "0");
+
+    List<Matricula> matriculas = new MatriculaRepository(arquivo).carregarMatriculas();
+    assertTrue(saida.contains("1 aluno(s) chamado(s) da lista de espera com sucesso"));
+    assertTrue(
+        matriculas.stream()
+            .anyMatch(
+                matricula ->
+                    matricula.getId().equals("mat-1")
+                        && matricula.getStatus().name().equals("CONFIRMADA")));
+  }
+
+  @Test
+  @DisplayName("RF28: aluno consulta percentual de frequência pela CLI")
+  void alunoConsultaPercentualFrequenciaPelaCli() throws Exception {
+    Path arquivo = criarArquivoRf28();
+    String saida =
+        executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "22", "turma-1", "", "0");
+
+    assertTrue(saida.contains("Seu percentual de frequência na turma turma-1:"));
+    assertTrue(saida.contains("Presenças: 2/3"));
+    assertTrue(saida.contains("66,7%") || saida.contains("66.7%"));
+  }
+
+  @Test
+  @DisplayName("RF28: professor consulta frequência da turma pela CLI")
+  void professorConsultaFrequenciaDaTurmaPelaCli() throws Exception {
+    Path arquivo = criarArquivoRf28();
+    String saida =
+        executar(arquivo, "1", "professor@classroompb.com", "123456", "", "23", "turma-1", "", "0");
+
+    assertTrue(saida.contains("Percentual de frequência da turma turma-1:"));
+    assertTrue(saida.contains("aluno-1"));
+    assertTrue(saida.contains("Frequência:"));
+  }
+
+  @Test
+  @DisplayName("RF22/RF24: aluno cancela matricula e promove lista de espera pela CLI")
+  void alunoCancelaMatriculaEPromoveListaEsperaPelaCli() throws Exception {
+    Path arquivo = criarArquivoRf22Cancelamento();
+    String saida =
+        executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "15", "mat-1", "", "0");
+
+    List<Matricula> matriculas = new MatriculaRepository(arquivo).carregarMatriculas();
+    assertTrue(saida.contains("Matrícula cancelada com sucesso."));
+    assertTrue(
+        matriculas.stream()
+            .anyMatch(
+                matricula ->
+                    matricula.getId().equals("mat-2")
+                        && matricula.getStatus().name().equals("CONFIRMADA")));
+  }
+
+  @Test
+  @DisplayName("coordenador cadastra disciplina com pre-requisito pela CLI")
+  void coordenadorCadastraDisciplinaComPreRequisitoPelaCli() throws Exception {
+    Path arquivo = copiarFixture();
+    String saida =
+        executar(
+            arquivo,
+            "1",
+            "coordenador@classroompb.com",
+            "123456",
+            "",
+            "5",
+            "ESW200",
+            "Projeto Avancado",
+            "60",
+            "4",
+            "curso-1",
+            "disc-1",
+            "",
+            "6",
+            "",
+            "0");
+
+    assertTrue(saida.contains("Disciplina cadastrada com sucesso"));
+    assertTrue(
+        new DisciplinaRepository(arquivo)
+            .carregarDisciplinas().stream()
+                .anyMatch(disciplina -> disciplina.getCodigo().equals("ESW200")));
   }
 
   @Test
@@ -408,6 +498,9 @@ class ClassRoomCLIFluxosIntegradosTest {
             + "    {\"id\":\"prof-1\",\"perfil\":\"PROFESSOR\",\"nome\":\"Professor\","
             + "\"matricula\":\"2026100\",\"email\":\"professor@classroompb.com\","
             + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-0\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Confirmado\","
+            + "\"matricula\":\"2026200\",\"email\":\"confirmado@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
             + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Primeiro Aluno\","
             + "\"matricula\":\"2026201\",\"email\":\"primeiro@classroompb.com\","
             + "\"senha\":\"123456\",\"ativo\":true},\n"
@@ -438,7 +531,137 @@ class ClassRoomCLIFluxosIntegradosTest {
             + "\"status\":\"EM_ESPERA\"},\n"
             + "    {\"id\":\"mat-2\",\"idAluno\":\"aluno-2\",\"idTurma\":\"turma-1\","
             + "\"status\":\"EM_ESPERA\"}\n"
-            + "  ]\n"
+            + "  ],\n"
+            + "  \"presencas\": []\n"
+            + "}\n",
+        StandardCharsets.UTF_8);
+    return arquivo;
+  }
+
+  private Path criarArquivoRf24() throws Exception {
+    Path arquivo = tempDir.resolve("armazenamento-rf24.json");
+    Files.writeString(
+        arquivo,
+        "{\n"
+            + "  \"usuarios\": [\n"
+            + "    {\"id\":\"coord-1\",\"perfil\":\"COORDENADOR\","
+            + "\"nome\":\"Coordenador\",\"matricula\":\"2026001\","
+            + "\"email\":\"coordenador@classroompb.com\",\"senha\":\"123456\","
+            + "\"ativo\":true},\n"
+            + "    {\"id\":\"prof-1\",\"perfil\":\"PROFESSOR\",\"nome\":\"Professor\","
+            + "\"matricula\":\"2026100\",\"email\":\"professor@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Primeiro Aluno\","
+            + "\"matricula\":\"2026201\",\"email\":\"primeiro@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"disciplinas\": [\n"
+            + "    {\"id\":\"disc-1\",\"codigo\":\"ESW101\",\"nome\":\"Projeto\","
+            + "\"cargaHoraria\":60,\"creditos\":4,\"idCurso\":\"curso-1\","
+            + "\"preRequisitosIds\":[]}\n"
+            + "  ],\n"
+            + "  \"cursos\": [],\n"
+            + "  \"periodosLetivos\": [\n"
+            + "    {\"id\":\"periodo-1\",\"codigo\":\"2026.2\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"turmas\": [\n"
+            + "    {\"id\":\"turma-1\",\"idDisciplina\":\"disc-1\","
+            + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-1\","
+            + "\"limiteVagas\":2,\"sala\":\"Sala 101\","
+            + "\"dataInicioAulas\":\"2026-08-01\","
+            + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false}\n"
+            + "  ],\n"
+            + "  \"matriculas\": [\n"
+            + "    {\"id\":\"mat-0\",\"idAluno\":\"aluno-0\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"CONFIRMADA\"},\n"
+            + "    {\"id\":\"mat-1\",\"idAluno\":\"aluno-1\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"EM_ESPERA\"}\n"
+            + "  ],\n"
+            + "  \"presencas\": []\n"
+            + "}\n",
+        StandardCharsets.UTF_8);
+    return arquivo;
+  }
+
+  private Path criarArquivoRf28() throws Exception {
+    Path arquivo = tempDir.resolve("armazenamento-rf28.json");
+    Files.writeString(
+        arquivo,
+        "{\n"
+            + "  \"usuarios\": [\n"
+            + "    {\"id\":\"prof-1\",\"perfil\":\"PROFESSOR\",\"nome\":\"Professor\","
+            + "\"matricula\":\"2026100\",\"email\":\"professor@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Teste\","
+            + "\"matricula\":\"2026200\",\"email\":\"aluno@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"disciplinas\": [],\n"
+            + "  \"cursos\": [],\n"
+            + "  \"periodosLetivos\": [\n"
+            + "    {\"id\":\"periodo-1\",\"codigo\":\"2026.2\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"turmas\": [\n"
+            + "    {\"id\":\"turma-1\",\"idDisciplina\":\"disc-1\","
+            + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-1\","
+            + "\"limiteVagas\":30,\"sala\":\"Sala 101\","
+            + "\"dataInicioAulas\":\"2026-03-01\","
+            + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false}\n"
+            + "  ],\n"
+            + "  \"matriculas\": [\n"
+            + "    {\"id\":\"mat-1\",\"idAluno\":\"aluno-1\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"CONFIRMADA\"}\n"
+            + "  ],\n"
+            + "  \"presencas\": [\n"
+            + "    {\"id\":\"reg-1\",\"idTurma\":\"turma-1\",\"idAluno\":\"aluno-1\","
+            + "\"data\":\"2026-03-02\",\"status\":\"PRESENTE\"},\n"
+            + "    {\"id\":\"reg-2\",\"idTurma\":\"turma-1\",\"idAluno\":\"aluno-1\","
+            + "\"data\":\"2026-03-09\",\"status\":\"PRESENTE\"},\n"
+            + "    {\"id\":\"reg-3\",\"idTurma\":\"turma-1\",\"idAluno\":\"aluno-1\","
+            + "\"data\":\"2026-03-16\",\"status\":\"FALTA\"}\n"
+            + "  ],\n"
+            + "  \"presencas\": []\n"
+            + "}\n",
+        StandardCharsets.UTF_8);
+    return arquivo;
+  }
+
+  private Path criarArquivoRf22Cancelamento() throws Exception {
+    Path arquivo = tempDir.resolve("armazenamento-rf22-cancelamento.json");
+    Files.writeString(
+        arquivo,
+        "{\n"
+            + "  \"usuarios\": [\n"
+            + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Confirmado\","
+            + "\"matricula\":\"2026200\",\"email\":\"aluno@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-2\",\"perfil\":\"ALUNO\",\"nome\":\"Aluno Espera\","
+            + "\"matricula\":\"2026201\",\"email\":\"espera@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"disciplinas\": [\n"
+            + "    {\"id\":\"disc-1\",\"codigo\":\"ESW101\",\"nome\":\"Projeto\","
+            + "\"cargaHoraria\":60,\"creditos\":4,\"idCurso\":\"curso-1\","
+            + "\"preRequisitosIds\":[]}\n"
+            + "  ],\n"
+            + "  \"cursos\": [],\n"
+            + "  \"periodosLetivos\": [\n"
+            + "    {\"id\":\"periodo-1\",\"codigo\":\"2026.2\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"turmas\": [\n"
+            + "    {\"id\":\"turma-1\",\"idDisciplina\":\"disc-1\","
+            + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-1\","
+            + "\"limiteVagas\":1,\"sala\":\"Sala 101\","
+            + "\"dataInicioAulas\":\"2026-08-01\","
+            + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false}\n"
+            + "  ],\n"
+            + "  \"matriculas\": [\n"
+            + "    {\"id\":\"mat-1\",\"idAluno\":\"aluno-1\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"CONFIRMADA\"},\n"
+            + "    {\"id\":\"mat-2\",\"idAluno\":\"aluno-2\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"EM_ESPERA\"}\n"
+            + "  ],\n"
+            + "  \"presencas\": []\n"
             + "}\n",
         StandardCharsets.UTF_8);
     return arquivo;
@@ -451,6 +674,7 @@ class ClassRoomCLIFluxosIntegradosTest {
     System.setOut(new PrintStream(buffer));
 
     try {
+      MatriculaRepository matriculaRepository = new MatriculaRepository(arquivo);
       ClassRoomCLI cli =
           new ClassRoomCLI(
               new Scanner(new ByteArrayInputStream(entrada.getBytes(StandardCharsets.UTF_8))),
@@ -459,7 +683,8 @@ class ClassRoomCLIFluxosIntegradosTest {
               new CursoRepository(arquivo),
               new PeriodoLetivoRepository(arquivo),
               new TurmaRepository(arquivo),
-              new MatriculaRepository(arquivo));
+              matriculaRepository,
+              new PresencaRepository(arquivo));
       cli.iniciar();
     } finally {
       System.setOut(saidaAnterior);

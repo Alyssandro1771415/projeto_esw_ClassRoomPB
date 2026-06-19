@@ -73,9 +73,35 @@ public class MatriculaController {
     boolean eraConfirmada = matricula.isConfirmada();
     removerMatricula(matricula);
     if (eraConfirmada) {
-      promoverPrimeiraMatriculaEmEspera(turma);
+      processarChamadaAutomaticaListaEspera(turma.getId());
     }
     return matricula;
+  }
+
+  /**
+   * RF24: Chama automaticamente o(s) próximo(s) aluno(s) elegível(eis) da lista de espera enquanto
+   * houver vagas disponíveis na turma.
+   */
+  public List<Matricula> processarChamadaAutomaticaListaEspera(String idTurma) {
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    return chamarProximosAlunosListaEspera(turma);
+  }
+
+  /**
+   * RF24: Coordenador aciona manualmente a chamada dos próximos alunos elegíveis da lista de
+   * espera.
+   */
+  public List<Matricula> chamarProximosAlunosListaEsperaManualmente(String idTurma) {
+    validarCoordenadorAutenticado();
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    if (!possuiVagasDisponiveis(turma)) {
+      throw new IllegalArgumentException("Turma não possui vagas disponíveis.");
+    }
+    List<Matricula> promovidos = chamarProximosAlunosListaEspera(turma);
+    if (promovidos.isEmpty()) {
+      throw new IllegalArgumentException("Nenhum aluno elegível na lista de espera.");
+    }
+    return promovidos;
   }
 
   public List<Matricula> getMatriculas() {
@@ -311,13 +337,26 @@ public class MatriculaController {
     }
   }
 
-  private void promoverPrimeiraMatriculaEmEspera(Turma turma) {
+  private List<Matricula> chamarProximosAlunosListaEspera(Turma turma) {
+    List<Matricula> promovidos = new ArrayList<>();
+    while (possuiVagasDisponiveis(turma)) {
+      Matricula promovida = promoverProximoAlunoElegivel(turma);
+      if (promovida == null) {
+        break;
+      }
+      promovidos.add(promovida);
+    }
+    return Collections.unmodifiableList(promovidos);
+  }
+
+  private Matricula promoverProximoAlunoElegivel(Turma turma) {
     for (Matricula matricula : listarMatriculasEmEsperaOrdenadas(turma)) {
-      if (possuiVagasDisponiveis(turma) && alunoPodeSerPromovido(matricula.getIdAluno(), turma)) {
+      if (alunoPodeSerPromovido(matricula.getIdAluno(), turma)) {
         matricula.setStatus(StatusMatricula.CONFIRMADA);
-        return;
+        return matricula;
       }
     }
+    return null;
   }
 
   private boolean alunoPodeSerPromovido(String idAluno, Turma turma) {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import pb.classroom.model.FrequenciaAluno;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.RegistroPresenca;
@@ -100,6 +101,65 @@ public class PresencaController {
 
   public List<RegistroPresenca> getRegistrosPresenca() {
     return Collections.unmodifiableList(registros);
+  }
+
+  /** RF28: Calcula o percentual de frequência de um aluno em uma turma. */
+  public FrequenciaAluno calcularFrequenciaAluno(String idTurma, String idAluno) {
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    validarCampoObrigatorio(idAluno, "id do aluno");
+    return calcularFrequenciaInterna(turma.getId(), idAluno.trim());
+  }
+
+  /** RF28: Aluno consulta o próprio percentual de frequência em uma turma. */
+  public FrequenciaAluno consultarMinhaFrequencia(String idTurma) {
+    Usuario aluno = validarAlunoAutenticado();
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    return calcularFrequenciaInterna(turma.getId(), aluno.getId());
+  }
+
+  /**
+   * RF28: Coordenador ou professor da turma consulta o percentual de frequência de todos os alunos
+   * matriculados confirmados.
+   */
+  public List<FrequenciaAluno> calcularFrequenciaPorTurma(String idTurma) {
+    validarCoordenadorOuProfessorDaTurma(idTurma);
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    List<FrequenciaAluno> frequencias = new ArrayList<>();
+    for (String idAluno : listarAlunosConfirmadosNaTurma(turma.getId())) {
+      frequencias.add(calcularFrequenciaInterna(turma.getId(), idAluno));
+    }
+    return Collections.unmodifiableList(frequencias);
+  }
+
+  private FrequenciaAluno calcularFrequenciaInterna(String idTurma, String idAluno) {
+    int totalAulas = 0;
+    int totalPresencas = 0;
+    for (RegistroPresenca registro : registros) {
+      if (registro.getIdTurma().equals(idTurma) && registro.getIdAluno().equals(idAluno)) {
+        totalAulas++;
+        if (registro.isPresente()) {
+          totalPresencas++;
+        }
+      }
+    }
+    return new FrequenciaAluno(idAluno, idTurma, totalAulas, totalPresencas);
+  }
+
+  private List<String> listarAlunosConfirmadosNaTurma(String idTurma) {
+    List<String> alunos = new ArrayList<>();
+    for (Matricula matricula : matriculas) {
+      if (matricula.getIdTurma().equals(idTurma) && matricula.isConfirmada()) {
+        alunos.add(matricula.getIdAluno());
+      }
+    }
+    return alunos;
+  }
+
+  private String validarCampoObrigatorio(String valor, String campo) {
+    if (valor == null || valor.trim().isEmpty()) {
+      throw new IllegalArgumentException(campo + " é obrigatório");
+    }
+    return valor.trim();
   }
 
   private Usuario validarProfessorAutenticado() {

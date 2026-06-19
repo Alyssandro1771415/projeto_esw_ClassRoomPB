@@ -12,6 +12,9 @@ O projeto cobre atualmente:
 - Cadastro e listagem de cursos.
 - Cadastro e listagem de disciplinas vinculadas a cursos existentes.
 - Cadastro, ativacao e encerramento de periodos letivos.
+- Oferta, alteracao e cancelamento de turmas.
+- Matricula com confirmacao automatica, lista de espera e chamada automatica de alunos.
+- Registro e consulta de presenca/falta e calculo de percentual de frequencia.
 - Persistencia local dos dados.
 - Testes automatizados com JUnit 5.
 - Geracao automatica do relatorio `TESTE.md` ao rodar a suite de testes Maven.
@@ -98,6 +101,8 @@ Controllers atuais:
 - `DisciplinaController`
 - `PeriodoLetivoController`
 - `TurmaController`
+- `MatriculaController`
+- `PresencaController`
 
 ### Camada `repository`
 
@@ -110,6 +115,8 @@ Repositories atuais:
 - `DisciplinaRepository`
 - `PeriodoLetivoRepository`
 - `TurmaRepository`
+- `MatriculaRepository`
+- `PresencaRepository`
 - `ArmazenamentoJson`
 
 ### Camada `view`
@@ -181,6 +188,9 @@ Ele armazena:
 - `disciplinas`
 - `cursos`
 - `periodosLetivos`
+- `turmas`
+- `matriculas`
+- `presencas`
 
 Caso o arquivo nao exista ou nao possua usuarios, o sistema cria automaticamente um administrador inicial:
 
@@ -232,10 +242,19 @@ A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 - Cadastrar disciplina.
 - Listar disciplinas.
 - Listar cursos.
+- Listar turmas.
 - Cadastrar periodo letivo.
 - Listar periodos letivos.
 - Ativar periodo letivo.
 - Encerrar periodo letivo.
+- Ofertar turma.
+- Alterar turma.
+- Cancelar turma.
+- Consultar lista de espera.
+- Remover aluno da lista de espera.
+- Chamar proximos alunos da lista de espera.
+- Consultar presencas por turma.
+- Consultar percentual de frequencia.
 
 ### Professor
 
@@ -245,6 +264,10 @@ A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 - Listar disciplinas.
 - Listar turmas.
 - Listar periodos letivos.
+- Consultar lista de espera.
+- Registrar presenca/falta.
+- Consultar presencas por turma.
+- Consultar percentual de frequencia.
 
 ### Aluno
 
@@ -254,7 +277,11 @@ A classe `ClassRoomCLI` mostra opcoes diferentes conforme o perfil logado.
 - Listar disciplinas.
 - Listar turmas disponiveis.
 - Solicitar matricula.
+- Cancelar matricula.
 - Listar periodos letivos.
+- Consultar posicao na lista de espera.
+- Consultar minhas presencas.
+- Consultar meu percentual de frequencia.
 
 ## 10. Classes do Pacote `pb.classroom.model`
 
@@ -401,8 +428,47 @@ Atributos:
 - `id`
 - `idAluno`
 - `idTurma`
+- `status` (`CONFIRMADA` ou `EM_ESPERA`)
 
 Os campos sao obrigatorios e a igualdade e feita pelo `id`.
+
+### `StatusMatricula`
+
+Enum com os estados da matricula:
+
+- `CONFIRMADA`
+- `EM_ESPERA`
+
+### `RegistroPresenca`
+
+Registro individual de presenca ou falta de um aluno em uma turma em determinada data (RF27).
+
+Atributos:
+
+- `id`
+- `idTurma`
+- `idAluno`
+- `data`
+- `status` (`PRESENTE` ou `FALTA`)
+
+### `StatusPresenca`
+
+Enum com os estados do registro de presenca:
+
+- `PRESENTE`
+- `FALTA`
+
+### `FrequenciaAluno`
+
+Representa o percentual de frequencia calculado de um aluno em uma turma (RF28).
+
+Atributos calculados:
+
+- `idAluno`
+- `idTurma`
+- `totalAulasRegistradas`
+- `totalPresencas`
+- `percentual` (presencas / total de registros × 100)
 
 ## 11. Classes do Pacote `pb.classroom.controller`
 
@@ -534,23 +600,56 @@ Regras:
 
 ### `MatriculaController`
 
-Controla a solicitacao de matricula com confirmacao automatica (RF20), validacao de choque de horario, controle de vagas e pre-requisitos.
+Controla solicitacao, cancelamento, lista de espera e chamada automatica de alunos.
 
-Principal metodo:
+Principais metodos:
 
 - `solicitarMatricula(String idTurma)`
+- `cancelarMatricula(String idMatricula)`
+- `consultarListaEspera(String idTurma)`
+- `consultarListaEsperaOrdenadaPorSolicitacao(String idTurma)`
+- `visualizarListaEsperaPorTurma(String idTurma)`
+- `consultarPosicaoAluno(String idTurma)`
+- `removerAlunoListaEspera(String idTurma, String idMatricula)`
+- `consultarListaEsperaCompleta(String idTurma)`
+- `processarChamadaAutomaticaListaEspera(String idTurma)`
+- `chamarProximosAlunosListaEsperaManualmente(String idTurma)`
 
 Regras:
 
-- Apenas aluno autenticado pode solicitar matricula.
+- Apenas aluno autenticado pode solicitar ou cancelar a propria matricula.
 - A turma precisa existir, nao estar cancelada e pertencer a periodo ativo.
 - O aluno nao pode se matricular duas vezes na mesma turma.
-- A turma precisa ter vagas disponiveis (total de matriculas < limiteVagas).
-- Os pre-requisitos da disciplina da turma devem estar atendidos (aluno matriculado em turma da disciplina pre-requisito).
+- Os pre-requisitos da disciplina da turma devem estar atendidos.
 - O sistema compara os blocos de horario das turmas do aluno no mesmo periodo letivo.
-- Horarios sobrepostos no mesmo dia sao bloqueados.
-- Horarios consecutivos, em dias diferentes ou em periodos diferentes sao permitidos.
-- Turma cancelada ja matriculada nao gera conflito.
+- Matricula confirmada quando ha vaga; caso contrario, status `EM_ESPERA`.
+- Ao cancelar matricula confirmada ou aumentar vagas da turma, o sistema chama automaticamente o(s) proximo(s) aluno(s) elegivel(eis) da lista de espera (RF24).
+- Alunos inelegiveis por choque de horario ou pre-requisitos sao pulados na promocao.
+- Coordenador consulta, remove alunos da espera e pode acionar chamada manual.
+- Professor da turma consulta a lista de espera completa.
+
+### `PresencaController`
+
+Controla registro e consulta de presenca/falta e calculo de frequencia (RF27, RF28).
+
+Principais metodos:
+
+- `registrarPresenca(String idTurma, LocalDate data, Map<String, Boolean> presencas)`
+- `consultarPresencasPorTurma(String idTurma)`
+- `consultarPresencasDoAluno(String idTurma)`
+- `calcularFrequenciaAluno(String idTurma, String idAluno)`
+- `consultarMinhaFrequencia(String idTurma)`
+- `calcularFrequenciaPorTurma(String idTurma)`
+
+Regras:
+
+- Apenas o professor da turma registra presenca/falta.
+- Apenas alunos com matricula confirmada podem ter presenca registrada.
+- Nao permite registro duplicado para o mesmo aluno, turma e data.
+- Data da presenca deve estar entre o inicio das aulas e a data atual.
+- Coordenador ou professor da turma consultam presencas e frequencia de todos os alunos.
+- Aluno consulta apenas suas proprias presencas e frequencia.
+- Percentual de frequencia = presencas / total de registros × 100.
 
 ## 12. Classes do Pacote `pb.classroom.repository`
 
@@ -562,7 +661,7 @@ Responsabilidades:
 
 - Extrair arrays por nome de campo.
 - Retornar `[]` quando um campo ainda nao existe.
-- Montar o documento completo de persistencia com usuarios, disciplinas, cursos, periodos letivos, turmas e matriculas.
+- Montar o documento completo de persistencia com usuarios, disciplinas, cursos, periodos letivos, turmas, matriculas e presencas.
 - Validar se os conteudos salvos como arrays comecam com `[` e terminam com `]`.
 
 Observacao tecnica: a implementacao usa manipulacao manual de texto e expressoes regulares. Funciona para a estrutura atual simples, mas nao substitui uma biblioteca JSON completa.
@@ -633,8 +732,19 @@ Responsabilidades:
 
 - Ler o array `matriculas`.
 - Converter JSON em objetos `Matricula`.
-- Converter matriculas em JSON.
-- Preservar usuarios, disciplinas, cursos, periodos letivos e turmas ao salvar matriculas.
+- Converter matriculas em JSON, incluindo o campo `status`.
+- Preservar usuarios, disciplinas, cursos, periodos letivos, turmas e presencas ao salvar matriculas.
+
+### `PresencaRepository`
+
+Carrega e salva registros de presenca.
+
+Responsabilidades:
+
+- Ler o array `presencas`.
+- Converter JSON em objetos `RegistroPresenca`.
+- Converter presencas em JSON.
+- Preservar usuarios, disciplinas, cursos, periodos letivos, turmas e matriculas ao salvar presencas.
 
 ## 13. Classe `ClassRoomCLI`
 
@@ -671,6 +781,11 @@ Fluxos implementados:
 - Alteracao de turma.
 - Cancelamento de turma.
 - Solicitacao de matricula com validacao de choque de horario.
+- Cancelamento de matricula pelo aluno.
+- Consulta e gestao da lista de espera.
+- Chamada automatica de alunos da lista de espera.
+- Registro e consulta de presenca/falta.
+- Consulta de percentual de frequencia.
 
 ## 14. Menu da Aplicacao
 
@@ -684,16 +799,22 @@ Opcoes existentes no codigo:
 5  - Cadastrar disciplina
 6  - Listar disciplinas
 7  - Listar turmas
-8  - Listar cursos / Solicitar matricula para aluno
+8  - Listar cursos / Solicitar matricula (aluno)
 9  - Cadastrar periodo letivo
 10 - Listar periodos letivos
 11 - Ativar periodo letivo
 12 - Encerrar periodo letivo
 13 - Listar usuarios
 14 - Ofertar turma
+15 - Cancelar matricula (aluno)
 16 - Alterar turma
 17 - Cancelar turma
 18 - Cadastrar curso
+19 - Consultar lista de espera / posicao na espera (aluno)
+20 - Remover da espera (coord.) / Registrar presenca (prof.) / Minhas presencas (aluno)
+21 - Consultar presencas por turma
+22 - Chamar proximos da espera (coord.) / Minha frequencia (aluno)
+23 - Consultar percentual de frequencia (coord./prof.)
 0  - Sair
 ```
 
@@ -957,6 +1078,27 @@ Verifica:
 
 - Salvamento e carregamento de matriculas.
 - Preservacao das demais colecoes do armazenamento.
+- Persistencia de status `EM_ESPERA` e ordem da lista de espera.
+
+### `PresencaRepositoryTest`
+
+Verifica salvamento, carregamento e preservacao das demais colecoes ao salvar presencas.
+
+### `ListaEsperaRf23Test`, `ListaEsperaRf24Test`, `ListaEsperaRf25Rf26Test`
+
+Verificam consulta, remocao, ordem FIFO, chamada automatica e visualizacao da lista de espera (RF23 a RF26).
+
+### `PresencaRf27Test`, `PresencaRf28Test`
+
+Verificam registro de presenca/falta, consultas por perfil e calculo de percentual de frequencia (RF27 e RF28).
+
+### `FrequenciaAlunoTest`, `RegistroPresencaTest`
+
+Verificam validacoes e calculos dos models de frequencia e presenca.
+
+### `ClassRoomCLIFluxosIntegradosTest`
+
+Verifica fluxos integrados da CLI, incluindo lista de espera, chamada automatica, frequencia e cadastro com pre-requisito.
 
 ### `TesteMarkdownReport`
 
@@ -1048,17 +1190,40 @@ Se todas as validacoes passarem (alem das validacoes ja existentes de turma disp
 
 ### RF21 - Lista de espera
 
-Implementado em `MatriculaController` e `MatriculaRepository`. Quando nao ha vaga, a matricula fica com status `EM_ESPERA`; ao cancelar uma matricula confirmada, o primeiro aluno elegivel da lista de espera e promovido para `CONFIRMADA`.
+Implementado em `MatriculaController` e `MatriculaRepository`. Quando nao ha vaga, a matricula fica com status `EM_ESPERA`. Ao liberar vaga, o sistema promove automaticamente o proximo aluno elegivel da fila (ver RF24).
 
 ### RF22 - Cancelar matricula dentro do periodo permitido
 
 Implementado em `MatriculaController` e CLI. O aluno autenticado pode cancelar a propria matricula antes da data de inicio das aulas da turma. Apos essa data, o cancelamento e bloqueado.
 
+### RF23 - Manter lista de espera por turma
+
+Implementado em `MatriculaController` e CLI. Coordenador e professor da turma consultam a lista de espera; aluno consulta sua posicao; coordenador remove aluno da espera.
+
+### RF24 - Chamar automaticamente o proximo aluno da lista de espera
+
+Implementado em `MatriculaController` e CLI. Ao cancelar matricula confirmada ou aumentar o limite de vagas da turma, o sistema promove automaticamente o(s) proximo(s) aluno(s) elegivel(eis) em ordem FIFO, pulando inelegiveis. Coordenador pode acionar manualmente pela opcao 22.
+
+### RF25 - Ordem de solicitacao na lista de espera
+
+Implementado em `MatriculaController`. A consulta da lista de espera respeita a ordem de chegada das solicitacoes.
+
+### RF26 - Coordenador visualiza lista de espera
+
+Implementado em `MatriculaController` e CLI. Apenas coordenador visualiza a lista de espera completa por turma via `visualizarListaEsperaPorTurma`.
+
+### RF27 - Registrar presenca/falta dos alunos
+
+Implementado em `PresencaController`, `PresencaRepository` e CLI. Professor da turma registra presenca ou falta; coordenador e professor consultam; aluno consulta os proprios registros.
+
+### RF28 - Calcular percentual de frequencia
+
+Implementado em `PresencaController` e model `FrequenciaAluno`. Calcula presencas / total de registros × 100 por aluno e turma. Coordenador, professor e aluno consultam conforme perfil.
+
 ## 23. Limitacoes Atuais
 
 Alguns pontos ainda nao estao implementados completamente:
 
-- Nao existe frequencia.
 - Nao existe notas, media, recuperacao ou situacao final.
 - Nao existe historico academico.
 - A validacao de pre-requisitos considera "atendido" quando o aluno possui uma matricula em turma da disciplina pre-requisito, sem verificar aprovacao por nota (pois notas nao estao implementadas).
@@ -1093,17 +1258,14 @@ Proximos passos naturais:
 1. Melhorar a interface do projeto, seja com uma CLI mais amigavel, uma interface desktop ou uma interface web.
 2. Exibir nomes de disciplina, periodo e professor nas listagens de turmas, alem dos IDs.
 3. Adicionar filtros de turma por disciplina, professor ou periodo letivo.
-4. Criar testes de integracao de CLI para os principais fluxos.
+4. Ampliar testes de integracao de CLI para fluxos ainda nao cobertos.
 
 Proximos passos para releases futuras:
 
-1. Controle de vagas.
-2. Validacao de pre-requisitos.
-3. Lista de espera.
-4. Frequencia.
-5. Notas.
-6. Historico.
-7. Relatorios academicos.
+1. Notas, media e recuperacao.
+2. Historico academico.
+3. Relatorios academicos.
+4. Frequencia minima obrigatoria para aprovacao.
 
 ## 26. Comandos Uteis
 
@@ -1145,6 +1307,6 @@ mvn package
 
 ## 27. Resumo Final
 
-O ClassRoomPB esta estruturado em MVC, possui dominio academico inicial, autenticacao, controle de perfis, persistencia local e testes automatizados para os fluxos principais ja implementados.
+O ClassRoomPB esta estruturado em MVC, possui dominio academico completo ate a release atual, autenticacao, controle de perfis, persistencia local e testes automatizados para os fluxos principais implementados.
 
-O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas vinculadas a cursos existentes, periodos letivos, oferta de turmas, consulta de turmas disponiveis, matricula persistida, validacao de choque de horario para professor e aluno, alteracao/cancelamento de turmas e relatorio automatico de testes.
+O estado atual cobre cadastro/login, perfis, usuarios, cursos, disciplinas, periodos letivos, turmas, matricula com lista de espera e chamada automatica, presenca/falta, percentual de frequencia e relatorio automatico de testes com cobertura JaCoCo acima de 80%.
