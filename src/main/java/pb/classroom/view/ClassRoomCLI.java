@@ -110,10 +110,17 @@ public class ClassRoomCLI {
         matriculaRepository,
         new PresencaRepository(
             matriculaRepository.getCaminhoArquivo() != null
-                ? (matriculaRepository.getCaminhoArquivo().getFileName().toString().equals("armazenamento.json")
+                ? (matriculaRepository
+                        .getCaminhoArquivo()
+                        .getFileName()
+                        .toString()
+                        .equals("armazenamento.json")
                     ? matriculaRepository.getCaminhoArquivo()
                     : (matriculaRepository.getCaminhoArquivo().getParent() != null
-                        ? matriculaRepository.getCaminhoArquivo().getParent().resolve("presencas.json")
+                        ? matriculaRepository
+                            .getCaminhoArquivo()
+                            .getParent()
+                            .resolve("presencas.json")
                         : java.nio.file.Paths.get("presencas.json")))
                 : java.nio.file.Paths.get("presencas.json")));
   }
@@ -1016,7 +1023,10 @@ public class ClassRoomCLI {
     String idTurma = lerLinha("ID da turma: ");
 
     try {
-      List<Matricula> listaEspera = matriculaController.consultarListaEsperaCompleta(idTurma);
+      List<Matricula> listaEspera =
+          usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)
+              ? matriculaController.visualizarListaEsperaPorTurma(idTurma)
+              : matriculaController.consultarListaEsperaCompleta(idTurma);
       if (listaEspera.isEmpty()) {
         System.out.println("Nenhum aluno na lista de espera desta turma.");
         return;
@@ -1026,8 +1036,11 @@ public class ClassRoomCLI {
       int posicao = 1;
       for (Matricula matricula : listaEspera) {
         System.out.println(
-            posicao + "ª posição - Matrícula ID: " + matricula.getId()
-                + " - Aluno ID: " + matricula.getIdAluno());
+            posicao
+                + "ª posição - Matrícula ID: "
+                + matricula.getId()
+                + " - Aluno ID: "
+                + matricula.getIdAluno());
         posicao++;
       }
     } catch (IllegalArgumentException e) {
@@ -1066,7 +1079,7 @@ public class ClassRoomCLI {
     String idTurma = lerLinha("ID da turma: ");
 
     try {
-      List<Matricula> listaEspera = matriculaController.consultarListaEsperaCompleta(idTurma);
+      List<Matricula> listaEspera = matriculaController.visualizarListaEsperaPorTurma(idTurma);
       if (listaEspera.isEmpty()) {
         System.out.println("Nenhum aluno na lista de espera desta turma.");
         return;
@@ -1076,8 +1089,11 @@ public class ClassRoomCLI {
       int posicao = 1;
       for (Matricula matricula : listaEspera) {
         System.out.println(
-            posicao + "ª - ID matrícula: " + matricula.getId()
-                + " - Aluno ID: " + matricula.getIdAluno());
+            posicao
+                + "ª - ID matrícula: "
+                + matricula.getId()
+                + " - Aluno ID: "
+                + matricula.getIdAluno());
         posicao++;
       }
 
@@ -1121,15 +1137,15 @@ public class ClassRoomCLI {
       System.out.println("Registre P (presente) ou F (falta) para cada aluno:");
       Map<String, Boolean> presencas = new LinkedHashMap<>();
       for (Matricula matricula : matriculasConfirmadas) {
-        String resposta =
-            lerLinha("Aluno " + matricula.getIdAluno() + " (P/F): ").toUpperCase();
+        String resposta = lerLinha("Aluno " + matricula.getIdAluno() + " (P/F): ").toUpperCase();
         presencas.put(matricula.getIdAluno(), resposta.equals("P"));
       }
 
       List<RegistroPresenca> registrados =
           presencaController.registrarPresenca(idTurma, data, presencas);
       presencaRepository.salvarPresencas(presencaController.getRegistrosPresenca());
-      System.out.println("Presença registrada com sucesso para " + registrados.size() + " aluno(s).");
+      System.out.println(
+          "Presença registrada com sucesso para " + registrados.size() + " aluno(s).");
     } catch (IllegalArgumentException e) {
       System.out.println(e.getMessage());
     } catch (Exception e) {
@@ -1157,9 +1173,12 @@ public class ClassRoomCLI {
       System.out.println("Registros de presença da turma " + idTurma + ":");
       for (RegistroPresenca registro : presencas) {
         System.out.println(
-            "Data: " + registro.getData()
-                + " - Aluno: " + registro.getIdAluno()
-                + " - Status: " + registro.getStatus());
+            "Data: "
+                + registro.getData()
+                + " - Aluno: "
+                + registro.getIdAluno()
+                + " - Status: "
+                + registro.getStatus());
       }
     } catch (IllegalArgumentException e) {
       System.out.println(e.getMessage());

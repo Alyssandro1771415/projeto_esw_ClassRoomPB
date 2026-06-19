@@ -4,9 +4,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Registro individual de presença ou falta de um aluno em uma turma em determinada data (RF27).
- */
+/** Registro individual de presença ou falta de um aluno em uma turma em determinada data (RF27). */
 public class RegistroPresenca {
 
   private final String id;

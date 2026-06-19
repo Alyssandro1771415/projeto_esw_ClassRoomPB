@@ -13,7 +13,8 @@ class RegistroPresencaTest {
   @DisplayName("Criação com todos os campos válidos")
   void criacaoComCamposValidos() {
     RegistroPresenca registro =
-        new RegistroPresenca("turma-1", "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE);
+        new RegistroPresenca(
+            "turma-1", "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE);
 
     assertAll(
         () -> assertNotNull(registro.getId()),
@@ -43,7 +44,9 @@ class RegistroPresencaTest {
   void idTurmaObrigatorio() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new RegistroPresenca(null, "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
+        () ->
+            new RegistroPresenca(
+                null, "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
   }
 
   @Test
@@ -51,7 +54,9 @@ class RegistroPresencaTest {
   void idTurmaNaoPodeSerVazio() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new RegistroPresenca("  ", "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
+        () ->
+            new RegistroPresenca(
+                "  ", "aluno-1", LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
   }
 
   @Test
@@ -59,7 +64,9 @@ class RegistroPresencaTest {
   void idAlunoObrigatorio() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> new RegistroPresenca("turma-1", null, LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
+        () ->
+            new RegistroPresenca(
+                "turma-1", null, LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE));
   }
 
   @Test

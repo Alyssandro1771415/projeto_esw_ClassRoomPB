@@ -55,8 +55,13 @@ final class ArmazenamentoJson {
       String turmasJson,
       String matriculasJson) {
     return montarDocumento(
-        usuariosJson, disciplinasJson, cursosJson, periodosLetivosJson, turmasJson,
-        matriculasJson, "[]");
+        usuariosJson,
+        disciplinasJson,
+        cursosJson,
+        periodosLetivosJson,
+        turmasJson,
+        matriculasJson,
+        "[]");
   }
 
   static String montarDocumento(

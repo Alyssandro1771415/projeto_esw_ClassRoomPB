@@ -70,7 +70,8 @@ public class PresencaRepository {
 
     while (matcher.find()) {
       String objeto = matcher.group(1);
-      if (!objeto.contains("\"idTurma\"") || !objeto.contains("\"idAluno\"")
+      if (!objeto.contains("\"idTurma\"")
+          || !objeto.contains("\"idAluno\"")
           || !objeto.contains("\"data\"")) {
         continue;
       }

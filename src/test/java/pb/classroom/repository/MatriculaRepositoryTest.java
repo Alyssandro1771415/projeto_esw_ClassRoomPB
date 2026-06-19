@@ -59,6 +59,24 @@ class MatriculaRepositoryTest {
   }
 
   @Test
+  @DisplayName("RF25: salva e carrega lista de espera na mesma ordem")
+  void salvaECarregaListaDeEsperaNaMesmaOrdem() {
+    Path arquivo = tempDir.resolve("armazenamento-ordem-espera.json");
+    MatriculaRepository repository = new MatriculaRepository(arquivo);
+    Matricula primeira = new Matricula("mat-1", "aluno-1", "turma-1", StatusMatricula.EM_ESPERA);
+    Matricula segunda = new Matricula("mat-2", "aluno-2", "turma-1", StatusMatricula.EM_ESPERA);
+    Matricula terceira = new Matricula("mat-3", "aluno-3", "turma-1", StatusMatricula.EM_ESPERA);
+
+    repository.salvarMatriculas(List.of(primeira, segunda, terceira));
+
+    List<Matricula> carregadas = repository.carregarMatriculas();
+    assertAll(
+        () -> assertEquals(primeira.getId(), carregadas.get(0).getId()),
+        () -> assertEquals(segunda.getId(), carregadas.get(1).getId()),
+        () -> assertEquals(terceira.getId(), carregadas.get(2).getId()));
+  }
+
+  @Test
   @DisplayName("salvar matriculas preserva demais colecoes")
   void salvarMatriculasPreservaDemaisColecoes() throws Exception {
     Path arquivo = tempDir.resolve("armazenamento.json");

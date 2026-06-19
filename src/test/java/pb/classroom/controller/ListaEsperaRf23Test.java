@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -127,8 +126,7 @@ class ListaEsperaRf23Test {
     Turma turma = criarTurma("turma-1", 10);
     Matricula confirmada =
         new Matricula("mat-1", aluno.getId(), turma.getId(), StatusMatricula.CONFIRMADA);
-    MatriculaController controller =
-        criarController(List.of(confirmada), List.of(turma));
+    MatriculaController controller = criarController(List.of(confirmada), List.of(turma));
 
     List<Matricula> listaEspera = controller.consultarListaEsperaCompleta(turma.getId());
 
@@ -206,8 +204,7 @@ class ListaEsperaRf23Test {
         new Matricula("mat-1", aluno.getId(), turma.getId(), StatusMatricula.CONFIRMADA);
     Matricula espera =
         new Matricula("mat-2", outroAluno.getId(), turma.getId(), StatusMatricula.EM_ESPERA);
-    MatriculaController controller =
-        criarController(List.of(confirmada, espera), List.of(turma));
+    MatriculaController controller = criarController(List.of(confirmada, espera), List.of(turma));
 
     Matricula removida = controller.removerAlunoListaEspera(turma.getId(), espera.getId());
 

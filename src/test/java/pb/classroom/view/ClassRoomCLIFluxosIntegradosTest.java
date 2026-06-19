@@ -167,6 +167,21 @@ class ClassRoomCLIFluxosIntegradosTest {
   }
 
   @Test
+  @DisplayName("RF26: coordenador consulta lista de espera pela CLI")
+  void coordenadorConsultaListaEsperaPelaCli() throws Exception {
+    Path arquivo = criarArquivoRf26();
+    String saida =
+        executar(
+            arquivo, "1", "coordenador@classroompb.com", "123456", "", "19", "turma-1", "", "0");
+
+    int primeiraPosicao = saida.indexOf("1ª posição - Matrícula ID: mat-1");
+    int segundaPosicao = saida.indexOf("2ª posição - Matrícula ID: mat-2");
+    assertTrue(saida.contains("Lista de espera da turma turma-1:"));
+    assertTrue(primeiraPosicao >= 0);
+    assertTrue(segundaPosicao > primeiraPosicao);
+  }
+
+  @Test
   @DisplayName("admin cadastra usuario e coordenador encerra periodo letivo")
   void adminCadastraUsuarioECoordenadorEncerraPeriodo() throws Exception {
     Path arquivo = copiarFixture();
@@ -375,6 +390,55 @@ class ClassRoomCLIFluxosIntegradosTest {
             + "\"horarios\":[\"MONDAY|09:00|11:00\"],\"cancelada\":false}\n"
             + "  ],\n"
             + "  \"matriculas\": []\n"
+            + "}\n",
+        StandardCharsets.UTF_8);
+    return arquivo;
+  }
+
+  private Path criarArquivoRf26() throws Exception {
+    Path arquivo = tempDir.resolve("armazenamento-rf26.json");
+    Files.writeString(
+        arquivo,
+        "{\n"
+            + "  \"usuarios\": [\n"
+            + "    {\"id\":\"coord-1\",\"perfil\":\"COORDENADOR\","
+            + "\"nome\":\"Coordenador Teste\",\"matricula\":\"2026001\","
+            + "\"email\":\"coordenador@classroompb.com\",\"senha\":\"123456\","
+            + "\"ativo\":true},\n"
+            + "    {\"id\":\"prof-1\",\"perfil\":\"PROFESSOR\",\"nome\":\"Professor\","
+            + "\"matricula\":\"2026100\",\"email\":\"professor@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-1\",\"perfil\":\"ALUNO\",\"nome\":\"Primeiro Aluno\","
+            + "\"matricula\":\"2026201\",\"email\":\"primeiro@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true},\n"
+            + "    {\"id\":\"aluno-2\",\"perfil\":\"ALUNO\",\"nome\":\"Segundo Aluno\","
+            + "\"matricula\":\"2026202\",\"email\":\"segundo@classroompb.com\","
+            + "\"senha\":\"123456\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"disciplinas\": [\n"
+            + "    {\"id\":\"disc-1\",\"codigo\":\"ESW101\",\"nome\":\"Projeto\","
+            + "\"cargaHoraria\":60,\"creditos\":4,\"idCurso\":\"curso-1\","
+            + "\"preRequisitosIds\":[]}\n"
+            + "  ],\n"
+            + "  \"cursos\": [],\n"
+            + "  \"periodosLetivos\": [\n"
+            + "    {\"id\":\"periodo-1\",\"codigo\":\"2026.2\",\"ativo\":true}\n"
+            + "  ],\n"
+            + "  \"turmas\": [\n"
+            + "    {\"id\":\"turma-1\",\"idDisciplina\":\"disc-1\","
+            + "\"idPeriodoLetivo\":\"periodo-1\",\"idProfessor\":\"prof-1\","
+            + "\"limiteVagas\":1,\"sala\":\"Sala 101\","
+            + "\"dataInicioAulas\":\"2026-08-01\","
+            + "\"horarios\":[\"MONDAY|08:00|10:00\"],\"cancelada\":false}\n"
+            + "  ],\n"
+            + "  \"matriculas\": [\n"
+            + "    {\"id\":\"mat-0\",\"idAluno\":\"aluno-0\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"CONFIRMADA\"},\n"
+            + "    {\"id\":\"mat-1\",\"idAluno\":\"aluno-1\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"EM_ESPERA\"},\n"
+            + "    {\"id\":\"mat-2\",\"idAluno\":\"aluno-2\",\"idTurma\":\"turma-1\","
+            + "\"status\":\"EM_ESPERA\"}\n"
+            + "  ]\n"
             + "}\n",
         StandardCharsets.UTF_8);
     return arquivo;

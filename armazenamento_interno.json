@@ -44,6 +44,24 @@
       "email": "segundo.professor@professor.classroom.com",
       "senha": "123456",
       "ativo": true
+    },
+    {
+      "id": "3ddbefe5-b5c4-4466-be1f-a852d1cf4630",
+      "perfil": "ALUNO",
+      "nome": "Alyssandro Dyogo",
+      "matricula": "2026004",
+      "email": "alyssandro.dyogo@aluno.classroom.com",
+      "senha": "123456",
+      "ativo": true
+    },
+    {
+      "id": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "perfil": "ALUNO",
+      "nome": "Rodrigo Almeida",
+      "matricula": "2026008",
+      "email": "rodrigo.almeida@aluno.classroom.com",
+      "senha": "123456",
+      "ativo": true
     }
   ],
   "disciplinas": [
@@ -97,7 +115,35 @@
         "MONDAY|09:00|11:00"
       ],
       "cancelada": false
+    },
+    {
+      "id": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "idDisciplina": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
+      "idPeriodoLetivo": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
+      "idProfessor": "cb4a8c07-4f6b-45b0-8c11-349bb25e63d5",
+      "limiteVagas": 1,
+      "sala": "112",
+      "dataInicioAulas": "2026-06-30",
+      "horarios": [
+        "MONDAY|12:20|13:20",
+        "MONDAY|14:00|15:00"
+      ],
+      "cancelada": false
     }
   ],
-  "matriculas": []
+  "matriculas": [
+    {
+      "id": "741f50a2-c030-49e4-a997-c6a2bae111b8",
+      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "8987fe35-9329-4cf9-99c0-a42bd4d8e695",
+      "idAluno": "3ddbefe5-b5c4-4466-be1f-a852d1cf4630",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "status": "EM_ESPERA"
+    }
+  ],
+  "presencas": []
 }

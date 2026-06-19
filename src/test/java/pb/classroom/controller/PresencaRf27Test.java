@@ -121,8 +121,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: professor registra falta com sucesso")
   void professorRegistraFaltaComSucesso() {
     autenticacaoController.login("P001", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put(aluno.getId(), false);
@@ -140,8 +139,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: professor não pode registrar presença para turma de outro professor")
   void professorNaoRegistraPresencaEmTurmaDeOutro() {
     autenticacaoController.login("P002", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put(aluno.getId(), true);
@@ -155,8 +153,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: aluno não pode registrar presença")
   void alunoNaoPodeRegistrarPresenca() {
     autenticacaoController.login("A001", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put(aluno.getId(), true);
@@ -170,8 +167,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: registro de presença para data anterior ao início das aulas é bloqueado")
   void registroAntesDoInicioDasAulasBloqueado() {
     autenticacaoController.login("P001", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put(aluno.getId(), true);
@@ -185,8 +181,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: registro de presença para data futura é bloqueado")
   void registroParaDataFuturaBloqueado() {
     autenticacaoController.login("P001", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put(aluno.getId(), true);
@@ -201,8 +196,7 @@ class PresencaRf27Test {
   @DisplayName("RF27: registro para aluno não matriculado na turma é bloqueado")
   void registroParaAlunoNaoMatriculadoBloqueado() {
     autenticacaoController.login("P001", SENHA);
-    PresencaController controller =
-        criarPresencaController(List.of(), List.of(matriculaAluno));
+    PresencaController controller = criarPresencaController(List.of(), List.of(matriculaAluno));
 
     Map<String, Boolean> presencas = new LinkedHashMap<>();
     presencas.put("aluno-inexistente", true);
@@ -218,10 +212,18 @@ class PresencaRf27Test {
     autenticacaoController.login("P001", SENHA);
     RegistroPresenca reg1 =
         new RegistroPresenca(
-            "reg-1", turma.getId(), aluno.getId(), LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE);
+            "reg-1",
+            turma.getId(),
+            aluno.getId(),
+            LocalDate.of(2026, 3, 2),
+            StatusPresenca.PRESENTE);
     RegistroPresenca reg2 =
         new RegistroPresenca(
-            "reg-2", turma.getId(), outroAluno.getId(), LocalDate.of(2026, 3, 2), StatusPresenca.FALTA);
+            "reg-2",
+            turma.getId(),
+            outroAluno.getId(),
+            LocalDate.of(2026, 3, 2),
+            StatusPresenca.FALTA);
     PresencaController controller =
         criarPresencaController(List.of(reg1, reg2), List.of(matriculaAluno, matriculaOutroAluno));
 
@@ -239,10 +241,18 @@ class PresencaRf27Test {
     autenticacaoController.login("A001", SENHA);
     RegistroPresenca reg1 =
         new RegistroPresenca(
-            "reg-1", turma.getId(), aluno.getId(), LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE);
+            "reg-1",
+            turma.getId(),
+            aluno.getId(),
+            LocalDate.of(2026, 3, 2),
+            StatusPresenca.PRESENTE);
     RegistroPresenca reg2 =
         new RegistroPresenca(
-            "reg-2", turma.getId(), outroAluno.getId(), LocalDate.of(2026, 3, 2), StatusPresenca.FALTA);
+            "reg-2",
+            turma.getId(),
+            outroAluno.getId(),
+            LocalDate.of(2026, 3, 2),
+            StatusPresenca.FALTA);
     PresencaController controller =
         criarPresencaController(List.of(reg1, reg2), List.of(matriculaAluno, matriculaOutroAluno));
 
@@ -260,7 +270,11 @@ class PresencaRf27Test {
     autenticacaoController.login("P001", SENHA);
     RegistroPresenca existente =
         new RegistroPresenca(
-            "reg-1", turma.getId(), aluno.getId(), LocalDate.of(2026, 3, 2), StatusPresenca.PRESENTE);
+            "reg-1",
+            turma.getId(),
+            aluno.getId(),
+            LocalDate.of(2026, 3, 2),
+            StatusPresenca.PRESENTE);
     PresencaController controller =
         criarPresencaController(List.of(existente), List.of(matriculaAluno));
 
@@ -274,8 +288,7 @@ class PresencaRf27Test {
 
   private PresencaController criarPresencaController(
       List<RegistroPresenca> registros, List<Matricula> matriculas) {
-    return new PresencaController(
-        autenticacaoController, registros, List.of(turma), matriculas);
+    return new PresencaController(autenticacaoController, registros, List.of(turma), matriculas);
   }
 
   private Turma criarTurma(String id, String idProfessor, LocalDate dataInicio) {

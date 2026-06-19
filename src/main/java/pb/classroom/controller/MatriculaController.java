@@ -84,6 +84,22 @@ public class MatriculaController {
 
   public List<Matricula> consultarListaEspera(String idTurma) {
     Turma turma = buscarTurmaObrigatoria(idTurma);
+    return listarMatriculasEmEsperaOrdenadas(turma);
+  }
+
+  /** RF25: Consulta a lista de espera respeitando a ordem de solicitação da matrícula. */
+  public List<Matricula> consultarListaEsperaOrdenadaPorSolicitacao(String idTurma) {
+    Turma turma = buscarTurmaObrigatoria(idTurma);
+    return listarMatriculasEmEsperaOrdenadas(turma);
+  }
+
+  /** RF26: Coordenador visualiza a lista de espera de uma turma. */
+  public List<Matricula> visualizarListaEsperaPorTurma(String idTurma) {
+    validarCoordenadorAutenticado();
+    return consultarListaEsperaOrdenadaPorSolicitacao(idTurma);
+  }
+
+  private List<Matricula> listarMatriculasEmEsperaOrdenadas(Turma turma) {
     List<Matricula> listaEspera = new ArrayList<>();
     for (Matricula matricula : matriculas) {
       if (matricula.getIdTurma().equals(turma.getId()) && matricula.isEmEspera()) {
@@ -134,7 +150,7 @@ public class MatriculaController {
   /** RF23: Consulta a lista de espera completa. Apenas coordenador ou professor da turma. */
   public List<Matricula> consultarListaEsperaCompleta(String idTurma) {
     validarCoordenadorOuProfessorDaTurma(idTurma);
-    return consultarListaEspera(idTurma);
+    return consultarListaEsperaOrdenadaPorSolicitacao(idTurma);
   }
 
   private Usuario validarAlunoAutenticado() {
@@ -296,10 +312,7 @@ public class MatriculaController {
   }
 
   private void promoverPrimeiraMatriculaEmEspera(Turma turma) {
-    for (Matricula matricula : matriculas) {
-      if (!matricula.getIdTurma().equals(turma.getId()) || !matricula.isEmEspera()) {
-        continue;
-      }
+    for (Matricula matricula : listarMatriculasEmEsperaOrdenadas(turma)) {
       if (possuiVagasDisponiveis(turma) && alunoPodeSerPromovido(matricula.getIdAluno(), turma)) {
         matricula.setStatus(StatusMatricula.CONFIRMADA);
         return;
