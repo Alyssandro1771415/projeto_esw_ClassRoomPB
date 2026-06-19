@@ -342,10 +342,10 @@ public class ClassRoomCLI {
         break;
       case ALUNO:
         System.out.println("6 - Listar disciplinas");
-        System.out.println("15 - Cancelar matrícula");
         System.out.println("7 - Listar turmas");
         System.out.println("8 - Solicitar matrícula");
         System.out.println("10 - Listar períodos letivos");
+        System.out.println("15 - Cancelar matrícula");
         System.out.println("19 - Consultar posição na lista de espera");
         System.out.println("20 - Consultar minhas presenças");
         System.out.println("22 - Consultar meu percentual de frequência");
