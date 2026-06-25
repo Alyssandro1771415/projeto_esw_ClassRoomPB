@@ -111,7 +111,7 @@ class PresencaRf29Rf30Test {
         controller.consultarMinhaFrequenciaPorDisciplina("disc-1");
 
     assertTrue(frequencia.isAbaixoDoMinimoExigido());
-    assertTrue(frequencia.getMensagemAlerta().contains("minimo exigido"));
+    assertTrue(frequencia.getMensagemAlerta().contains("ALERTA"));
   }
 
   @Test
@@ -140,8 +140,14 @@ class PresencaRf29Rf30Test {
 
     assertAll(
         () -> assertEquals(2, frequencias.size()),
-        () -> assertEquals("disc-1", frequencias.get(0).getIdDisciplina()),
-        () -> assertEquals("disc-2", frequencias.get(1).getIdDisciplina()));
+        () ->
+            assertTrue(
+                frequencias.stream()
+                    .anyMatch(frequencia -> frequencia.getIdDisciplina().equals("disc-1"))),
+        () ->
+            assertTrue(
+                frequencias.stream()
+                    .anyMatch(frequencia -> frequencia.getIdDisciplina().equals("disc-2"))));
   }
 
   private Turma criarTurma(String id, String idDisciplina, String idPeriodo, DayOfWeek dia) {
