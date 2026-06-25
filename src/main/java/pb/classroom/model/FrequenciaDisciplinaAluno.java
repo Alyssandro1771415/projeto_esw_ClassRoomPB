@@ -2,21 +2,21 @@ package pb.classroom.model;
 
 import java.util.Objects;
 
-/** Percentual de frequência de um aluno em uma turma (RF28). */
-public class FrequenciaAluno {
+/** Percentual de frequencia agregado de um aluno em uma disciplina (RF29, RF30). */
+public class FrequenciaDisciplinaAluno {
 
   public static final double PERCENTUAL_MINIMO_EXIGIDO = 75.0;
 
   private final String idAluno;
-  private final String idTurma;
+  private final String idDisciplina;
   private final int totalAulasRegistradas;
   private final int totalPresencas;
   private final double percentual;
 
-  public FrequenciaAluno(
-      String idAluno, String idTurma, int totalAulasRegistradas, int totalPresencas) {
+  public FrequenciaDisciplinaAluno(
+      String idAluno, String idDisciplina, int totalAulasRegistradas, int totalPresencas) {
     this.idAluno = validarCampoObrigatorio(idAluno, "id do aluno");
-    this.idTurma = validarCampoObrigatorio(idTurma, "id da turma");
+    this.idDisciplina = validarCampoObrigatorio(idDisciplina, "id da disciplina");
     if (totalAulasRegistradas < 0 || totalPresencas < 0) {
       throw new IllegalArgumentException("totais de aulas e presenças não podem ser negativos");
     }
@@ -34,8 +34,8 @@ public class FrequenciaAluno {
     return idAluno;
   }
 
-  public String getIdTurma() {
-    return idTurma;
+  public String getIdDisciplina() {
+    return idDisciplina;
   }
 
   public int getTotalAulasRegistradas() {
@@ -86,12 +86,12 @@ public class FrequenciaAluno {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    FrequenciaAluno that = (FrequenciaAluno) o;
-    return idAluno.equals(that.idAluno) && idTurma.equals(that.idTurma);
+    FrequenciaDisciplinaAluno that = (FrequenciaDisciplinaAluno) o;
+    return idAluno.equals(that.idAluno) && idDisciplina.equals(that.idDisciplina);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(idAluno, idTurma);
+    return Objects.hash(idAluno, idDisciplina);
   }
 }

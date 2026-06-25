@@ -19,6 +19,7 @@ import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
 import pb.classroom.model.FrequenciaAluno;
+import pb.classroom.model.FrequenciaDisciplinaAluno;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
@@ -270,6 +271,9 @@ public class ClassRoomCLI {
         case "23":
           consultarFrequencia();
           break;
+        case "24":
+          consultarMinhaFrequenciaPorDisciplina();
+          break;
         case "0":
           executando = false;
           System.out.println("Sistema encerrado.");
@@ -341,6 +345,7 @@ public class ClassRoomCLI {
         System.out.println("23 - Consultar percentual de frequência");
         break;
       case ALUNO:
+        System.out.println("24 - Consultar minha frequência por disciplina");
         System.out.println("6 - Listar disciplinas");
         System.out.println("7 - Listar turmas");
         System.out.println("8 - Solicitar matrícula");
@@ -1322,6 +1327,25 @@ public class ClassRoomCLI {
     }
   }
 
+  private void consultarMinhaFrequenciaPorDisciplina() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar a própria frequência por disciplina.");
+      return;
+    }
+
+    listarDisciplinas();
+    String idDisciplina = lerLinha("ID da disciplina: ");
+
+    try {
+      FrequenciaDisciplinaAluno frequencia =
+          presencaController.consultarMinhaFrequenciaPorDisciplina(idDisciplina);
+      System.out.println("Sua frequência na disciplina " + idDisciplina + ":");
+      exibirFrequenciaDisciplina(frequencia);
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
   private void exibirFrequencia(FrequenciaAluno frequencia) {
     System.out.println(
         "Aluno: "
@@ -1333,5 +1357,26 @@ public class ClassRoomCLI {
             + " - Frequência: "
             + String.format("%.1f", frequencia.getPercentual())
             + "%");
+    if (frequencia.isAbaixoDoMinimoExigido()) {
+      System.out.println(frequencia.getMensagemAlerta());
+    }
+  }
+
+  private void exibirFrequenciaDisciplina(FrequenciaDisciplinaAluno frequencia) {
+    System.out.println(
+        "Aluno: "
+            + frequencia.getIdAluno()
+            + " - Disciplina: "
+            + frequencia.getIdDisciplina()
+            + " - Presenças: "
+            + frequencia.getTotalPresencas()
+            + "/"
+            + frequencia.getTotalAulasRegistradas()
+            + " - Frequência: "
+            + String.format("%.1f", frequencia.getPercentual())
+            + "%");
+    if (frequencia.isAbaixoDoMinimoExigido()) {
+      System.out.println(frequencia.getMensagemAlerta());
+    }
   }
 }

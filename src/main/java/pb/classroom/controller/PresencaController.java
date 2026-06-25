@@ -3,9 +3,12 @@ package pb.classroom.controller;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import pb.classroom.model.FrequenciaAluno;
+import pb.classroom.model.FrequenciaDisciplinaAluno;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.RegistroPresenca;
@@ -131,6 +134,31 @@ public class PresencaController {
     return Collections.unmodifiableList(frequencias);
   }
 
+  /** RF29: Aluno consulta a propria frequencia agregada em uma disciplina. */
+  public FrequenciaDisciplinaAluno consultarMinhaFrequenciaPorDisciplina(String idDisciplina) {
+    Usuario aluno = validarAlunoAutenticado();
+    String idDisciplinaNormalizado = validarCampoObrigatorio(idDisciplina, "id da disciplina");
+    validarAlunoMatriculadoNaDisciplina(aluno.getId(), idDisciplinaNormalizado);
+    return calcularFrequenciaDisciplinaInterna(aluno.getId(), idDisciplinaNormalizado);
+  }
+
+  /** RF29: Aluno consulta a propria frequencia em todas as disciplinas confirmadas. */
+  public List<FrequenciaDisciplinaAluno> consultarMinhasFrequenciasPorDisciplina() {
+    Usuario aluno = validarAlunoAutenticado();
+    Set<String> idsDisciplinas = new LinkedHashSet<>();
+    for (Matricula matricula : matriculas) {
+      if (matricula.getIdAluno().equals(aluno.getId()) && matricula.isConfirmada()) {
+        idsDisciplinas.add(buscarTurmaObrigatoria(matricula.getIdTurma()).getIdDisciplina());
+      }
+    }
+
+    List<FrequenciaDisciplinaAluno> frequencias = new ArrayList<>();
+    for (String idDisciplina : idsDisciplinas) {
+      frequencias.add(calcularFrequenciaDisciplinaInterna(aluno.getId(), idDisciplina));
+    }
+    return Collections.unmodifiableList(frequencias);
+  }
+
   private FrequenciaAluno calcularFrequenciaInterna(String idTurma, String idAluno) {
     int totalAulas = 0;
     int totalPresencas = 0;
@@ -143,6 +171,23 @@ public class PresencaController {
       }
     }
     return new FrequenciaAluno(idAluno, idTurma, totalAulas, totalPresencas);
+  }
+
+  private FrequenciaDisciplinaAluno calcularFrequenciaDisciplinaInterna(
+      String idAluno, String idDisciplina) {
+    int totalAulas = 0;
+    int totalPresencas = 0;
+    for (RegistroPresenca registro : registros) {
+      if (registro.getIdAluno().equals(idAluno)
+          && alunoPossuiMatriculaConfirmadaNaTurma(idAluno, registro.getIdTurma())
+          && buscarTurmaObrigatoria(registro.getIdTurma()).getIdDisciplina().equals(idDisciplina)) {
+        totalAulas++;
+        if (registro.isPresente()) {
+          totalPresencas++;
+        }
+      }
+    }
+    return new FrequenciaDisciplinaAluno(idAluno, idDisciplina, totalAulas, totalPresencas);
   }
 
   private List<String> listarAlunosConfirmadosNaTurma(String idTurma) {
@@ -226,6 +271,30 @@ public class PresencaController {
     }
     throw new IllegalArgumentException(
         "Aluno não possui matrícula confirmada na turma: " + idAluno);
+  }
+
+  private boolean alunoPossuiMatriculaConfirmadaNaTurma(String idAluno, String idTurma) {
+    for (Matricula matricula : matriculas) {
+      if (matricula.getIdAluno().equals(idAluno)
+          && matricula.getIdTurma().equals(idTurma)
+          && matricula.isConfirmada()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void validarAlunoMatriculadoNaDisciplina(String idAluno, String idDisciplina) {
+    for (Matricula matricula : matriculas) {
+      if (matricula.getIdAluno().equals(idAluno) && matricula.isConfirmada()) {
+        Turma turma = buscarTurmaObrigatoria(matricula.getIdTurma());
+        if (turma.getIdDisciplina().equals(idDisciplina)) {
+          return;
+        }
+      }
+    }
+    throw new IllegalArgumentException(
+        "Aluno não possui matrícula confirmada na disciplina: " + idDisciplina);
   }
 
   private void validarRegistroDuplicado(String idTurma, String idAluno, LocalDate data) {
