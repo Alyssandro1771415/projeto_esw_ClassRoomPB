@@ -123,7 +123,7 @@
       "idProfessor": "cb4a8c07-4f6b-45b0-8c11-349bb25e63d5",
       "limiteVagas": 1,
       "sala": "112",
-      "dataInicioAulas": "2026-06-30",
+      "dataInicioAulas": "2026-06-01",
       "horarios": [
         "MONDAY|12:20|13:20",
         "MONDAY|14:00|15:00"
@@ -143,7 +143,42 @@
       "idAluno": "3ddbefe5-b5c4-4466-be1f-a852d1cf4630",
       "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
       "status": "EM_ESPERA"
+    },
+    {
+      "id": "f7d7521b-0d66-45bf-bc2b-37f18be7e5e1",
+      "idAluno": "515185cd-0a64-4883-b209-2788daf5bb10",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "status": "EM_ESPERA"
     }
   ],
-  "presencas": []
+  "presencas": [
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "data": "2026-06-02",
+      "status": "FALTA"
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "data": "2026-06-09",
+      "status": "FALTA"
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "data": "2026-06-16",
+      "status": "FALTA"
+    },
+    {
+      "id": "146e394b-631b-40aa-bae8-8373630699f1",
+      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "data": "2026-06-29",
+      "status": "PRESENTE"
+    }
+  ]
 }

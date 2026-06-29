@@ -1,3 +1,6 @@
+# Node.js dependencies (mermaid-cli para gerar diagramas)
+node_modules/
+
 # Build outputs
 target/
 out/
