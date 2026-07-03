@@ -785,7 +785,8 @@ Fluxos implementados:
 - Consulta e gestao da lista de espera.
 - Chamada automatica de alunos da lista de espera.
 - Registro e consulta de presenca/falta.
-- Consulta de percentual de frequencia.
+- Consulta de percentual de frequencia (por turma e por disciplina).
+- Selecao numerada de registros e consultas consolidadas do aluno (ver secao de usabilidade em "14. Menu da Aplicacao").
 
 ## 14. Menu da Aplicacao
 
@@ -815,12 +816,22 @@ Opcoes existentes no codigo:
 21 - Consultar presencas por turma
 22 - Chamar proximos da espera (coord.) / Minha frequencia (aluno)
 23 - Consultar percentual de frequencia (coord./prof.)
+24 - Consultar minha frequencia por disciplina (aluno)
 0  - Sair
 ```
 
 Nem todas as opcoes aparecem para todos os perfis. A exibicao e filtrada no metodo `exibirFuncionalidadesPorPerfil`.
 
 Mesmo que o usuario digite uma opcao escondida, os metodos tambem validam o perfil antes de executar a acao.
+
+### Usabilidade: selecao por numero e consultas consolidadas
+
+Para reduzir a digitacao de identificadores (UUIDs) das turmas, disciplinas, periodos e matriculas, a CLI adota dois padroes:
+
+- **Selecao numerada hibrida:** nos fluxos que exigem escolher um registro (ofertar/alterar/cancelar turma, registrar/consultar presenca, lista de espera, ativar/encerrar periodo, cancelar matricula, etc.), a CLI exibe uma lista numerada com descricoes legiveis (por exemplo, `codigo - nome | Periodo | Sala | Horario`) e o usuario digita apenas o **numero** da opcao. Por compatibilidade e automacao, o **ID direto** continua sendo aceito no mesmo campo.
+- **Listas filtradas pelo relacionamento do usuario:** o professor so ve as turmas que leciona e o aluno so ve as turmas em que possui matricula; o coordenador ve todas.
+- **Consultas do aluno que listam tudo:** as opcoes do aluno de presencas (20), frequencia por turma (22), posicao na lista de espera (19) e frequencia por disciplina (24) percorrem automaticamente todos os registros relacionados ao aluno logado e os exibem de uma vez, sem pedir o codigo da turma/disciplina.
+- **Separadores visuais:** listagens e blocos de dados de entrada/saida sao separados por uma linha tracejada para facilitar a leitura no terminal.
 
 ## 15. Fluxo de Cadastro de Usuario
 
@@ -868,14 +879,14 @@ Mesmo que o usuario digite uma opcao escondida, os metodos tambem validam o perf
 
 1. Usuario precisa estar autenticado.
 2. Usuario precisa ter perfil `COORDENADOR`.
-3. A CLI exibe cursos existentes para que o coordenador escolha o curso da disciplina.
+3. A CLI exibe uma lista numerada de cursos para que o coordenador escolha o curso da disciplina (aceita o numero ou o ID).
 4. A CLI exibe disciplinas existentes para possivel uso como pre-requisito.
 5. A CLI solicita:
    - Codigo.
    - Nome.
    - Carga horaria.
    - Creditos.
-   - ID do curso.
+   - Curso (numero da lista ou ID).
    - IDs dos pre-requisitos.
 6. A CLI converte carga horaria e creditos para inteiro.
 7. O `DisciplinaController` valida:
@@ -910,8 +921,8 @@ Cadastro:
 Ativacao/encerramento:
 
 1. Usuario precisa ter perfil `COORDENADOR`.
-2. A CLI lista os periodos existentes.
-3. A CLI solicita o ID do periodo.
+2. A CLI lista os periodos existentes de forma numerada.
+3. A CLI solicita a escolha do periodo (numero da lista ou ID).
 4. O controller busca o periodo.
 5. O status e alterado.
 6. A lista e salva novamente no JSON.
@@ -922,11 +933,11 @@ Oferta:
 
 1. Usuario precisa estar autenticado.
 2. Usuario precisa ter perfil `COORDENADOR`.
-3. A CLI exibe disciplinas, periodos letivos e professores disponiveis.
+3. A CLI exibe disciplinas, periodos letivos e professores disponiveis em listas numeradas.
 4. A CLI solicita:
-   - ID da disciplina.
-   - ID do periodo letivo.
-   - ID do professor responsavel.
+   - Disciplina (numero da lista ou ID).
+   - Periodo letivo (numero da lista ou ID).
+   - Professor responsavel (numero da lista ou ID).
    - Limite de vagas.
    - Sala.
    - Data de inicio das aulas.
@@ -943,8 +954,8 @@ Oferta:
 Alteracao:
 
 1. Usuario precisa ter perfil `COORDENADOR`.
-2. A CLI lista as turmas existentes.
-3. A CLI solicita o ID da turma e os novos dados.
+2. A CLI lista as turmas existentes de forma numerada.
+3. A CLI solicita a escolha da turma (numero da lista ou ID) e os novos dados.
 4. O controller valida se a turma existe.
 5. A alteracao so e permitida antes da data de inicio das aulas.
 6. O controller revalida professor responsavel e choque de horario.
@@ -953,8 +964,8 @@ Alteracao:
 Cancelamento:
 
 1. Usuario precisa ter perfil `COORDENADOR`.
-2. A CLI lista as turmas existentes.
-3. A CLI solicita o ID da turma.
+2. A CLI lista as turmas existentes de forma numerada.
+3. A CLI solicita a escolha da turma (numero da lista ou ID).
 4. O controller valida se a turma existe.
 5. O cancelamento so e permitido antes da data de inicio das aulas.
 6. A turma e marcada como cancelada e a lista e salva no JSON.
@@ -1099,6 +1110,13 @@ Verificam validacoes e calculos dos models de frequencia e presenca.
 ### `ClassRoomCLIFluxosIntegradosTest`
 
 Verifica fluxos integrados da CLI, incluindo lista de espera, chamada automatica, frequencia e cadastro com pre-requisito.
+
+Inclui tambem testes de usabilidade que cobrem os novos padroes de navegacao:
+
+- Selecao de turma pelo **numero** da lista (alem do ID) na consulta de lista de espera do coordenador.
+- Consulta do aluno que lista **todas** as suas presencas sem informar a turma (opcao 20).
+- Consulta do aluno de frequencia por disciplina listando **todas** as disciplinas (opcao 24).
+- Presenca de **separadores tracejados** entre itens nas listagens.
 
 ### `TesteMarkdownReport`
 
@@ -1255,10 +1273,15 @@ O arquivo `TESTE.md` e reescrito sempre que `mvn test` ou `mvn clean test` termi
 
 Proximos passos naturais:
 
-1. Melhorar a interface do projeto, seja com uma CLI mais amigavel, uma interface desktop ou uma interface web.
-2. Exibir nomes de disciplina, periodo e professor nas listagens de turmas, alem dos IDs.
-3. Adicionar filtros de turma por disciplina, professor ou periodo letivo.
-4. Ampliar testes de integracao de CLI para fluxos ainda nao cobertos.
+1. Evoluir a interface para desktop ou web (a CLI ja adota selecao numerada, listas filtradas por usuario e separadores para melhor usabilidade).
+2. Adicionar filtros de turma por disciplina, professor ou periodo letivo.
+3. Ampliar testes de integracao de CLI para fluxos ainda nao cobertos.
+
+Ja concluidos nesta iteracao de usabilidade:
+
+- Exibicao de nomes de disciplina, periodo e horario nas listagens/selecoes de turmas, alem dos IDs.
+- Selecao numerada (aceitando tambem o ID) em vez de digitar UUIDs.
+- Consultas do aluno que listam automaticamente todos os registros relacionados.
 
 Proximos passos para releases futuras:
 
