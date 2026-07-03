@@ -204,10 +204,10 @@ class ClassRoomCLIFluxosIntegradosTest {
   @DisplayName("RF28: aluno consulta percentual de frequência pela CLI")
   void alunoConsultaPercentualFrequenciaPelaCli() throws Exception {
     Path arquivo = criarArquivoRf28();
-    String saida =
-        executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "22", "turma-1", "", "0");
+    String saida = executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "22", "", "0");
 
-    assertTrue(saida.contains("Seu percentual de frequência na turma turma-1:"));
+    assertTrue(saida.contains("Seu percentual de frequência:"));
+    assertTrue(saida.contains("ID da turma: turma-1"));
     assertTrue(saida.contains("Presenças: 2/3"));
     assertTrue(saida.contains("66,7%") || saida.contains("66.7%"));
   }
@@ -392,6 +392,49 @@ class ClassRoomCLIFluxosIntegradosTest {
 
     assertTrue(
         saida.contains("Opção inválida.") || saida.contains("senha") || saida.contains("inválid"));
+  }
+
+  @Test
+  @DisplayName("usabilidade: coordenador seleciona turma pelo numero na lista de espera")
+  void coordenadorSelecionaTurmaPeloNumero() throws Exception {
+    Path arquivo = criarArquivoRf26();
+    String saida =
+        executar(arquivo, "1", "coordenador@classroompb.com", "123456", "", "19", "1", "", "0");
+
+    assertTrue(saida.contains("Turmas relacionadas:"));
+    assertTrue(saida.contains("Lista de espera da turma turma-1:"));
+    assertTrue(saida.contains("1ª posição - Matrícula ID: mat-1"));
+  }
+
+  @Test
+  @DisplayName("usabilidade: aluno consulta todas as presencas sem informar turma")
+  void alunoConsultaTodasAsPresencasSemInformarTurma() throws Exception {
+    Path arquivo = criarArquivoRf28();
+    String saida = executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "20", "", "0");
+
+    assertTrue(saida.contains("Suas presenças:"));
+    assertTrue(saida.contains("ID da turma: turma-1"));
+    assertTrue(saida.contains("Status: PRESENTE"));
+    assertTrue(saida.contains("Status: FALTA"));
+  }
+
+  @Test
+  @DisplayName("usabilidade: aluno consulta frequencia por disciplina listando todas")
+  void alunoConsultaFrequenciaPorDisciplinaListandoTodas() throws Exception {
+    Path arquivo = criarArquivoRf28();
+    String saida = executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "24", "", "0");
+
+    assertTrue(saida.contains("Sua frequência por disciplina:"));
+    assertTrue(saida.contains("Presenças: 2/3"));
+  }
+
+  @Test
+  @DisplayName("usabilidade: listagens exibem separador tracejado entre itens")
+  void listagensExibemSeparadorTracejado() throws Exception {
+    Path arquivo = criarArquivoRf28();
+    String saida = executar(arquivo, "1", "aluno@classroompb.com", "123456", "", "22", "", "0");
+
+    assertTrue(saida.contains("------------------------------------------------------------"));
   }
 
   private Path copiarFixture() throws Exception {
