@@ -22,6 +22,7 @@ public class Turma {
   private LocalDate dataInicioAulas;
   private final List<BlocoHorario> horarios;
   private boolean cancelada;
+  private boolean fechada;
 
   public Turma(
       String idDisciplina,
@@ -40,6 +41,7 @@ public class Turma {
         sala,
         dataInicioAulas,
         horarios,
+        false,
         false);
   }
 
@@ -53,6 +55,30 @@ public class Turma {
       LocalDate dataInicioAulas,
       List<BlocoHorario> horarios,
       boolean cancelada) {
+    this(
+        id,
+        idDisciplina,
+        idPeriodoLetivo,
+        idProfessor,
+        limiteVagas,
+        sala,
+        dataInicioAulas,
+        horarios,
+        cancelada,
+        false);
+  }
+
+  public Turma(
+      String id,
+      String idDisciplina,
+      String idPeriodoLetivo,
+      String idProfessor,
+      int limiteVagas,
+      String sala,
+      LocalDate dataInicioAulas,
+      List<BlocoHorario> horarios,
+      boolean cancelada,
+      boolean fechada) {
     this.id = Objects.requireNonNull(id, "id").trim();
     if (this.id.isEmpty()) {
       throw new IllegalArgumentException("id não pode ser vazio");
@@ -65,6 +91,7 @@ public class Turma {
     setDataInicioAulas(dataInicioAulas);
     this.horarios = new ArrayList<>(validarHorarios(horarios));
     this.cancelada = cancelada;
+    this.fechada = fechada;
   }
 
   public String getId() {
@@ -150,6 +177,14 @@ public class Turma {
 
   public void setCancelada(boolean cancelada) {
     this.cancelada = cancelada;
+  }
+
+  public boolean isFechada() {
+    return fechada;
+  }
+
+  public void setFechada(boolean fechada) {
+    this.fechada = fechada;
   }
 
   private static List<BlocoHorario> validarHorarios(List<BlocoHorario> lista) {

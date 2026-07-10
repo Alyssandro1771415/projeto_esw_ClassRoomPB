@@ -62,6 +62,15 @@
       "email": "rodrigo.almeida@aluno.classroom.com",
       "senha": "123456",
       "ativo": true
+    },
+    {
+      "id": "d6be889c-5dc5-47b7-98cf-ab9b06ec4392",
+      "perfil": "ALUNO",
+      "nome": "Alyssandro Dyogo Pereira Ramos",
+      "matricula": "222080498",
+      "email": "alyssandro.ramos@aluno.classroom.com",
+      "senha": "123456",
+      "ativo": true
     }
   ],
   "disciplinas": [
@@ -149,6 +158,12 @@
       "idAluno": "515185cd-0a64-4883-b209-2788daf5bb10",
       "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
       "status": "EM_ESPERA"
+    },
+    {
+      "id": "806f4511-49c9-47f1-866a-cf13fff73238",
+      "idAluno": "515185cd-0a64-4883-b209-2788daf5bb10",
+      "idTurma": "f6d19373-e299-492e-a0ea-2112758fefb5",
+      "status": "CONFIRMADA"
     }
   ],
   "presencas": [

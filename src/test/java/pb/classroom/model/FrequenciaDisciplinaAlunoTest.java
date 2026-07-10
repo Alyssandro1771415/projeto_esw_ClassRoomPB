@@ -25,8 +25,7 @@ class FrequenciaDisciplinaAlunoTest {
   @Test
   @DisplayName("percentual zero quando nao ha aulas registradas")
   void percentualZeroQuandoNaoHaAulas() {
-    FrequenciaDisciplinaAluno frequencia =
-        new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 0, 0);
+    FrequenciaDisciplinaAluno frequencia = new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 0, 0);
 
     assertEquals(0.0, frequencia.getPercentual(), 0.01);
   }
@@ -54,11 +53,9 @@ class FrequenciaDisciplinaAlunoTest {
   @DisplayName("rejeita ids obrigatorios vazios")
   void rejeitaIdsObrigatoriosVazios() {
     assertThrows(
-        IllegalArgumentException.class,
-        () -> new FrequenciaDisciplinaAluno(null, "disc-1", 1, 1));
+        IllegalArgumentException.class, () -> new FrequenciaDisciplinaAluno(null, "disc-1", 1, 1));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> new FrequenciaDisciplinaAluno("aluno-1", " ", 1, 1));
+        IllegalArgumentException.class, () -> new FrequenciaDisciplinaAluno("aluno-1", " ", 1, 1));
   }
 
   @Test
@@ -117,12 +114,9 @@ class FrequenciaDisciplinaAlunoTest {
   @Test
   @DisplayName("igualdade por aluno e disciplina")
   void igualdadePorAlunoEDisciplina() {
-    FrequenciaDisciplinaAluno primeira =
-        new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 2, 1);
-    FrequenciaDisciplinaAluno segunda =
-        new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 5, 4);
-    FrequenciaDisciplinaAluno diferente =
-        new FrequenciaDisciplinaAluno("aluno-2", "disc-1", 2, 1);
+    FrequenciaDisciplinaAluno primeira = new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 2, 1);
+    FrequenciaDisciplinaAluno segunda = new FrequenciaDisciplinaAluno("aluno-1", "disc-1", 5, 4);
+    FrequenciaDisciplinaAluno diferente = new FrequenciaDisciplinaAluno("aluno-2", "disc-1", 2, 1);
 
     assertAll(
         () -> assertEquals(primeira, segunda),

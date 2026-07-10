@@ -5,44 +5,42 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import pb.classroom.model.RegistroPresenca;
-import pb.classroom.model.StatusPresenca;
+import pb.classroom.model.RegistroNota;
 
-public class PresencaRepository {
+public class NotaRepository {
 
   private static final Pattern OBJETO_JSON = Pattern.compile("\\{([^{}]*)\\}");
   private static final String ARQUIVO_PADRAO = "armazenamento_interno.json";
 
   private final Path caminhoArquivo;
 
-  public PresencaRepository() {
+  public NotaRepository() {
     this(Paths.get(ARQUIVO_PADRAO));
   }
 
-  public PresencaRepository(Path caminhoArquivo) {
+  public NotaRepository(Path caminhoArquivo) {
     this.caminhoArquivo = caminhoArquivo;
   }
 
-  public List<RegistroPresenca> carregarPresencas() {
+  public List<RegistroNota> carregarNotas() {
     try {
       if (!Files.exists(caminhoArquivo)) {
         return new ArrayList<>();
       }
 
       String conteudo = new String(Files.readAllBytes(caminhoArquivo), StandardCharsets.UTF_8);
-      String presencasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudo, "presencas");
-      return converterJsonParaPresencas(presencasJson);
+      String notasJson = ArmazenamentoJson.extrairArrayOuVazio(conteudo, "notas");
+      return converterJsonParaNotas(notasJson);
     } catch (IOException e) {
-      throw new IllegalStateException("Não foi possível carregar as presenças.", e);
+      throw new IllegalStateException("Não foi possível carregar as notas.", e);
     }
   }
 
-  public void salvarPresencas(List<RegistroPresenca> presencas) {
+  public void salvarNotas(List<RegistroNota> notas) {
     try {
       String conteudoAtual = "";
       if (Files.exists(caminhoArquivo)) {
@@ -57,52 +55,51 @@ public class PresencaRepository {
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "periodosLetivos"),
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "turmas"),
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "matriculas"),
-              converterPresencasParaJson(presencas),
-              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "notas"),
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"),
+              converterNotasParaJson(notas),
               ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "historicos"));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
-      throw new IllegalStateException("Não foi possível salvar as presenças.", e);
+      throw new IllegalStateException("Não foi possível salvar as notas.", e);
     }
   }
 
-  private List<RegistroPresenca> converterJsonParaPresencas(String conteudo) {
-    List<RegistroPresenca> presencas = new ArrayList<>();
+  private List<RegistroNota> converterJsonParaNotas(String conteudo) {
+    List<RegistroNota> notas = new ArrayList<>();
     Matcher matcher = OBJETO_JSON.matcher(conteudo);
 
     while (matcher.find()) {
       String objeto = matcher.group(1);
-      if (!objeto.contains("\"idTurma\"")
-          || !objeto.contains("\"idAluno\"")
-          || !objeto.contains("\"data\"")) {
+      if (!objeto.contains("\"idTurma\"") || !objeto.contains("\"idAluno\"")) {
         continue;
       }
-      presencas.add(
-          new RegistroPresenca(
+      notas.add(
+          new RegistroNota(
               obterTexto(objeto, "id"),
               obterTexto(objeto, "idTurma"),
               obterTexto(objeto, "idAluno"),
-              LocalDate.parse(obterTexto(objeto, "data")),
-              StatusPresenca.valueOf(
-                  obterTextoOuPadrao(objeto, "status", StatusPresenca.PRESENTE.name()))));
+              obterDoubleOpcional(objeto, "notaEtapa1"),
+              obterDoubleOpcional(objeto, "notaEtapa2"),
+              obterDoubleOpcional(objeto, "notaRecuperacao")));
     }
-    return presencas;
+    return notas;
   }
 
-  private String converterPresencasParaJson(List<RegistroPresenca> presencas) {
+  private String converterNotasParaJson(List<RegistroNota> notas) {
     StringBuilder json = new StringBuilder();
     json.append("[\n");
 
-    for (int i = 0; i < presencas.size(); i++) {
-      RegistroPresenca presenca = presencas.get(i);
+    for (int i = 0; i < notas.size(); i++) {
+      RegistroNota nota = notas.get(i);
       json.append("    {\n");
-      json.append("      \"id\": \"").append(escapar(presenca.getId())).append("\",\n");
-      json.append("      \"idTurma\": \"").append(escapar(presenca.getIdTurma())).append("\",\n");
-      json.append("      \"idAluno\": \"").append(escapar(presenca.getIdAluno())).append("\",\n");
-      json.append("      \"data\": \"").append(presenca.getData()).append("\",\n");
-      json.append("      \"status\": \"").append(presenca.getStatus().name()).append("\"\n");
+      json.append("      \"id\": \"").append(escapar(nota.getId())).append("\",\n");
+      json.append("      \"idTurma\": \"").append(escapar(nota.getIdTurma())).append("\",\n");
+      json.append("      \"idAluno\": \"").append(escapar(nota.getIdAluno())).append("\",\n");
+      adicionarNotaOpcional(json, "notaEtapa1", nota.getNotaEtapa1());
+      adicionarNotaOpcional(json, "notaEtapa2", nota.getNotaEtapa2());
+      adicionarNotaOpcional(json, "notaRecuperacao", nota.getNotaRecuperacao(), true);
       json.append("    }");
-      if (i < presencas.size() - 1) {
+      if (i < notas.size() - 1) {
         json.append(",");
       }
       json.append("\n");
@@ -110,6 +107,24 @@ public class PresencaRepository {
 
     json.append("  ]");
     return json.toString();
+  }
+
+  private void adicionarNotaOpcional(StringBuilder json, String campo, Double valor) {
+    adicionarNotaOpcional(json, campo, valor, false);
+  }
+
+  private void adicionarNotaOpcional(
+      StringBuilder json, String campo, Double valor, boolean ultimoCampo) {
+    if (valor == null) {
+      json.append("      \"").append(campo).append("\": null");
+    } else {
+      json.append("      \"").append(campo).append("\": ").append(valor);
+    }
+    if (!ultimoCampo) {
+      json.append(",\n");
+    } else {
+      json.append("\n");
+    }
   }
 
   private String obterTexto(String objeto, String campo) {
@@ -121,13 +136,17 @@ public class PresencaRepository {
     return desescapar(matcher.group(1));
   }
 
-  private String obterTextoOuPadrao(String objeto, String campo, String padrao) {
-    Matcher matcher =
-        Pattern.compile("\"" + campo + "\"\\s*:\\s*\"((?:\\\\.|[^\"])*)\"").matcher(objeto);
-    if (!matcher.find()) {
-      return padrao;
+  private Double obterDoubleOpcional(String objeto, String campo) {
+    Matcher matcherNulo = Pattern.compile("\"" + campo + "\"\\s*:\\s*null").matcher(objeto);
+    if (matcherNulo.find()) {
+      return null;
     }
-    return desescapar(matcher.group(1));
+    Matcher matcher =
+        Pattern.compile("\"" + campo + "\"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)").matcher(objeto);
+    if (!matcher.find()) {
+      return null;
+    }
+    return Double.parseDouble(matcher.group(1));
   }
 
   private String escapar(String valor) {
