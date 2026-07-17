@@ -2,7 +2,7 @@
 
 Gerado automaticamente apos a execucao dos testes Maven.
 
-Data/hora: 2026-07-10 10:32:06
+Data/hora: 2026-07-17 10:51:39
 
 Comando esperado:
 

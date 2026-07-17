@@ -1,199 +1,787 @@
 {
   "usuarios": [
     {
-      "id": "48984402-e926-4d2f-9ca1-d88a9adff49e",
+      "id": "admin-demo",
       "perfil": "ADMINISTRADOR",
-      "nome": "Administrador Padrao",
-      "matricula": "0001",
-      "email": "admin@classroompb.com",
-      "senha": "admin123",
+      "nome": "Marina Souza",
+      "matricula": "ADM001",
+      "email": "marina.souza@admin.classroom.com",
+      "senha": "demo123",
       "ativo": true
     },
     {
-      "id": "515185cd-0a64-4883-b209-2788daf5bb10",
-      "perfil": "ALUNO",
-      "nome": "Lucas Aluno",
-      "matricula": "2026001",
-      "email": "lucas@classroompb.com",
-      "senha": "123456",
-      "ativo": true
-    },
-    {
-      "id": "d26c7fce-ae20-4941-b984-077c5f9e3577",
+      "id": "coord-demo",
       "perfil": "COORDENADOR",
-      "nome": "Coordenador Curso",
-      "matricula": "2026002",
-      "email": "coordenador@classroompb.com",
-      "senha": "123456",
+      "nome": "Carlos Lima",
+      "matricula": "COORD001",
+      "email": "carlos.lima@coordenador.classroom.com",
+      "senha": "demo123",
       "ativo": true
     },
     {
-      "id": "5346a8a0-4afc-4f09-9a2f-1359084a9c43",
+      "id": "prof-demo",
       "perfil": "PROFESSOR",
-      "nome": "Professor Teste",
-      "matricula": "2026100",
-      "email": "professor.teste@professor.classroom.com",
-      "senha": "123456",
+      "nome": "Paulo Mendes",
+      "matricula": "PROF001",
+      "email": "paulo.mendes@professor.classroom.com",
+      "senha": "demo123",
       "ativo": true
     },
     {
-      "id": "cb4a8c07-4f6b-45b0-8c11-349bb25e63d5",
-      "perfil": "PROFESSOR",
-      "nome": "Segundo Professor",
-      "matricula": "2026101",
-      "email": "segundo.professor@professor.classroom.com",
-      "senha": "123456",
-      "ativo": true
-    },
-    {
-      "id": "3ddbefe5-b5c4-4466-be1f-a852d1cf4630",
+      "id": "aluno-ana",
       "perfil": "ALUNO",
-      "nome": "Alyssandro Dyogo",
-      "matricula": "2026004",
-      "email": "alyssandro.dyogo@aluno.classroom.com",
-      "senha": "123456",
+      "nome": "Ana Costa",
+      "matricula": "ALU001",
+      "email": "ana.costa@aluno.classroom.com",
+      "senha": "demo123",
       "ativo": true
     },
     {
-      "id": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
+      "id": "aluno-bruno",
       "perfil": "ALUNO",
-      "nome": "Rodrigo Almeida",
-      "matricula": "2026008",
-      "email": "rodrigo.almeida@aluno.classroom.com",
-      "senha": "123456",
+      "nome": "Bruno Alves",
+      "matricula": "ALU002",
+      "email": "bruno.alves@aluno.classroom.com",
+      "senha": "demo123",
       "ativo": true
     },
     {
-      "id": "d6be889c-5dc5-47b7-98cf-ab9b06ec4392",
+      "id": "aluno-carla",
       "perfil": "ALUNO",
-      "nome": "Alyssandro Dyogo Pereira Ramos",
-      "matricula": "222080498",
-      "email": "alyssandro.ramos@aluno.classroom.com",
-      "senha": "123456",
+      "nome": "Carla Nunes",
+      "matricula": "ALU003",
+      "email": "carla.nunes@aluno.classroom.com",
+      "senha": "demo123",
+      "ativo": true
+    },
+    {
+      "id": "aluno-diego",
+      "perfil": "ALUNO",
+      "nome": "Diego Rocha",
+      "matricula": "ALU004",
+      "email": "diego.rocha@aluno.classroom.com",
+      "senha": "demo123",
+      "ativo": true
+    },
+    {
+      "id": "aluno-elisa",
+      "perfil": "ALUNO",
+      "nome": "Elisa Martins",
+      "matricula": "ALU005",
+      "email": "elisa.martins@aluno.classroom.com",
+      "senha": "demo123",
       "ativo": true
     }
   ],
   "disciplinas": [
     {
-      "id": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
-      "codigo": "01",
-      "nome": "Engenharia de Software II",
+      "id": "disc-fundamentos",
+      "codigo": "ESW101",
+      "nome": "Fundamentos de Engenharia de Software",
       "cargaHoraria": 60,
-      "creditos": 5,
-      "idCurso": "0001",
+      "creditos": 4,
+      "idCurso": "curso-esw",
       "preRequisitosIds": []
+    },
+    {
+      "id": "disc-testes",
+      "codigo": "ESW201",
+      "nome": "Testes de Software",
+      "cargaHoraria": 60,
+      "creditos": 4,
+      "idCurso": "curso-esw",
+      "preRequisitosIds": [
+        "disc-fundamentos"
+      ]
+    },
+    {
+      "id": "disc-projeto",
+      "codigo": "ESW301",
+      "nome": "Projeto Integrador",
+      "cargaHoraria": 80,
+      "creditos": 6,
+      "idCurso": "curso-esw",
+      "preRequisitosIds": [
+        "disc-testes"
+      ]
     }
   ],
   "cursos": [
     {
-      "id": "0001",
+      "id": "curso-esw",
       "nome": "Engenharia de Software",
       "codigo": "ESW"
     }
   ],
   "periodosLetivos": [
     {
-      "id": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
+      "id": "periodo-2025-1",
+      "codigo": "2025.1",
+      "ativo": false
+    },
+    {
+      "id": "periodo-2025-2",
+      "codigo": "2025.2",
+      "ativo": false
+    },
+    {
+      "id": "periodo-2026-1",
+      "codigo": "2026.1",
+      "ativo": false
+    },
+    {
+      "id": "periodo-2026-2",
       "codigo": "2026.2",
       "ativo": true
     }
   ],
   "turmas": [
     {
-      "id": "f6d19373-e299-492e-a0ea-2112758fefb5",
-      "idDisciplina": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
-      "idPeriodoLetivo": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
-      "idProfessor": "5346a8a0-4afc-4f09-9a2f-1359084a9c43",
+      "id": "turma-fund-2025-1",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
       "limiteVagas": 30,
       "sala": "Sala 101",
-      "dataInicioAulas": "2626-09-01",
+      "dataInicioAulas": "2025-02-03",
       "horarios": [
         "MONDAY|08:00|10:00"
       ],
-      "cancelada": false
+      "cancelada": false,
+      "fechada": true
     },
     {
-      "id": "8e381d96-9f5a-427e-9e7d-8dfd8f11fc63",
-      "idDisciplina": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
-      "idPeriodoLetivo": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
-      "idProfessor": "cb4a8c07-4f6b-45b0-8c11-349bb25e63d5",
-      "limiteVagas": 30,
-      "sala": "102",
-      "dataInicioAulas": "2026-09-01",
+      "id": "turma-testes-2025-2",
+      "idDisciplina": "disc-testes",
+      "idPeriodoLetivo": "periodo-2025-2",
+      "idProfessor": "prof-demo",
+      "limiteVagas": 25,
+      "sala": "Laboratório 02",
+      "dataInicioAulas": "2025-08-05",
       "horarios": [
-        "MONDAY|09:00|11:00"
+        "TUESDAY|08:00|10:00"
       ],
-      "cancelada": false
+      "cancelada": false,
+      "fechada": true
     },
     {
-      "id": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "idDisciplina": "12d8fc26-c875-4255-aae2-4b2e746a0a8a",
-      "idPeriodoLetivo": "27d60cc0-7a0a-4c76-95ae-7a551d18d432",
-      "idProfessor": "cb4a8c07-4f6b-45b0-8c11-349bb25e63d5",
+      "id": "turma-projeto-cancelada-2026-1",
+      "idDisciplina": "disc-projeto",
+      "idPeriodoLetivo": "periodo-2026-1",
+      "idProfessor": "prof-demo",
+      "limiteVagas": 20,
+      "sala": "Sala Maker",
+      "dataInicioAulas": "2026-02-05",
+      "horarios": [
+        "THURSDAY|19:00|21:00"
+      ],
+      "cancelada": true,
+      "fechada": false
+    },
+    {
+      "id": "turma-testes-2026-2",
+      "idDisciplina": "disc-testes",
+      "idPeriodoLetivo": "periodo-2026-2",
+      "idProfessor": "prof-demo",
+      "limiteVagas": 20,
+      "sala": "Laboratório 01",
+      "dataInicioAulas": "2026-07-01",
+      "horarios": [
+        "WEDNESDAY|14:00|16:00"
+      ],
+      "cancelada": false,
+      "fechada": false
+    },
+    {
+      "id": "turma-projeto-2026-2",
+      "idDisciplina": "disc-projeto",
+      "idPeriodoLetivo": "periodo-2026-2",
+      "idProfessor": "prof-demo",
+      "limiteVagas": 15,
+      "sala": "Sala Maker",
+      "dataInicioAulas": "2026-07-02",
+      "horarios": [
+        "THURSDAY|19:00|21:00"
+      ],
+      "cancelada": false,
+      "fechada": false
+    },
+    {
+      "id": "turma-fund-espera-2026-2",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2026-2",
+      "idProfessor": "prof-demo",
       "limiteVagas": 1,
-      "sala": "112",
-      "dataInicioAulas": "2026-06-01",
+      "sala": "Sala 103",
+      "dataInicioAulas": "2026-09-04",
       "horarios": [
-        "MONDAY|12:20|13:20",
-        "MONDAY|14:00|15:00"
+        "FRIDAY|10:00|12:00"
       ],
-      "cancelada": false
+      "cancelada": false,
+      "fechada": false
     }
   ],
   "matriculas": [
     {
-      "id": "741f50a2-c030-49e4-a997-c6a2bae111b8",
-      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
+      "id": "mat-fund-ana",
+      "idAluno": "aluno-ana",
+      "idTurma": "turma-fund-2025-1",
       "status": "CONFIRMADA"
     },
     {
-      "id": "8987fe35-9329-4cf9-99c0-a42bd4d8e695",
-      "idAluno": "3ddbefe5-b5c4-4466-be1f-a852d1cf4630",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "status": "EM_ESPERA"
-    },
-    {
-      "id": "f7d7521b-0d66-45bf-bc2b-37f18be7e5e1",
-      "idAluno": "515185cd-0a64-4883-b209-2788daf5bb10",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "status": "EM_ESPERA"
-    },
-    {
-      "id": "806f4511-49c9-47f1-866a-cf13fff73238",
-      "idAluno": "515185cd-0a64-4883-b209-2788daf5bb10",
-      "idTurma": "f6d19373-e299-492e-a0ea-2112758fefb5",
+      "id": "mat-fund-bruno",
+      "idAluno": "aluno-bruno",
+      "idTurma": "turma-fund-2025-1",
       "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-fund-carla",
+      "idAluno": "aluno-carla",
+      "idTurma": "turma-fund-2025-1",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-fund-diego",
+      "idAluno": "aluno-diego",
+      "idTurma": "turma-fund-2025-1",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-fund-elisa",
+      "idAluno": "aluno-elisa",
+      "idTurma": "turma-fund-2025-1",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-testes-antiga-ana",
+      "idAluno": "aluno-ana",
+      "idTurma": "turma-testes-2025-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-testes-antiga-diego",
+      "idAluno": "aluno-diego",
+      "idTurma": "turma-testes-2025-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-testes-antiga-elisa",
+      "idAluno": "aluno-elisa",
+      "idTurma": "turma-testes-2025-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-testes-atual-elisa",
+      "idAluno": "aluno-elisa",
+      "idTurma": "turma-testes-2026-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-projeto-ana",
+      "idAluno": "aluno-ana",
+      "idTurma": "turma-projeto-2026-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-projeto-diego",
+      "idAluno": "aluno-diego",
+      "idTurma": "turma-projeto-2026-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-espera-bruno",
+      "idAluno": "aluno-bruno",
+      "idTurma": "turma-fund-espera-2026-2",
+      "status": "CONFIRMADA"
+    },
+    {
+      "id": "mat-espera-carla",
+      "idAluno": "aluno-carla",
+      "idTurma": "turma-fund-espera-2026-2",
+      "status": "EM_ESPERA"
+    },
+    {
+      "id": "mat-espera-elisa",
+      "idAluno": "aluno-elisa",
+      "idTurma": "turma-fund-espera-2026-2",
+      "status": "EM_ESPERA"
     }
   ],
   "presencas": [
     {
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
-      "data": "2026-06-02",
-      "status": "FALTA"
-    },
-    {
-      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
-      "data": "2026-06-09",
-      "status": "FALTA"
-    },
-    {
-      "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
-      "data": "2026-06-16",
-      "status": "FALTA"
-    },
-    {
-      "id": "146e394b-631b-40aa-bae8-8373630699f1",
-      "idTurma": "c2c63a25-187c-4cce-8685-4ff530a45638",
-      "idAluno": "086c84e2-4fc1-48de-87d2-c32b4f6ff6b8",
-      "data": "2026-06-29",
+      "id": "pres-fund-ana-01",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-ana",
+      "data": "2025-02-03",
       "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-ana-02",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-ana",
+      "data": "2025-02-10",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-ana-03",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-ana",
+      "data": "2025-02-17",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-ana-04",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-ana",
+      "data": "2025-02-24",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-bruno-01",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-bruno",
+      "data": "2025-02-03",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-bruno-02",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-bruno",
+      "data": "2025-02-10",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-bruno-03",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-bruno",
+      "data": "2025-02-17",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-bruno-04",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-bruno",
+      "data": "2025-02-24",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-carla-01",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-carla",
+      "data": "2025-02-03",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-carla-02",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-carla",
+      "data": "2025-02-10",
+      "status": "FALTA"
+    },
+    {
+      "id": "pres-fund-carla-03",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-carla",
+      "data": "2025-02-17",
+      "status": "FALTA"
+    },
+    {
+      "id": "pres-fund-carla-04",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-carla",
+      "data": "2025-02-24",
+      "status": "FALTA"
+    },
+    {
+      "id": "pres-fund-diego-01",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-diego",
+      "data": "2025-02-03",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-diego-02",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-diego",
+      "data": "2025-02-10",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-diego-03",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-diego",
+      "data": "2025-02-17",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-diego-04",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-diego",
+      "data": "2025-02-24",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-elisa-01",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-elisa",
+      "data": "2025-02-03",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-elisa-02",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-elisa",
+      "data": "2025-02-10",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-elisa-03",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-elisa",
+      "data": "2025-02-17",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-fund-elisa-04",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-elisa",
+      "data": "2025-02-24",
+      "status": "FALTA"
+    },
+    {
+      "id": "pres-testes-ana-01",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-ana",
+      "data": "2025-08-05",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-ana-02",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-ana",
+      "data": "2025-08-12",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-ana-03",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-ana",
+      "data": "2025-08-19",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-ana-04",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-ana",
+      "data": "2025-08-26",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-diego-01",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-diego",
+      "data": "2025-08-05",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-diego-02",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-diego",
+      "data": "2025-08-12",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-diego-03",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-diego",
+      "data": "2025-08-19",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-diego-04",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-diego",
+      "data": "2025-08-26",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-elisa-01",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-elisa",
+      "data": "2025-08-05",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-elisa-02",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-elisa",
+      "data": "2025-08-12",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-elisa-03",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-elisa",
+      "data": "2025-08-19",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-elisa-04",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-elisa",
+      "data": "2025-08-26",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-atual-elisa-01",
+      "idTurma": "turma-testes-2026-2",
+      "idAluno": "aluno-elisa",
+      "data": "2026-07-01",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-atual-elisa-02",
+      "idTurma": "turma-testes-2026-2",
+      "idAluno": "aluno-elisa",
+      "data": "2026-07-08",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-testes-atual-elisa-03",
+      "idTurma": "turma-testes-2026-2",
+      "idAluno": "aluno-elisa",
+      "data": "2026-07-15",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-ana-01",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-ana",
+      "data": "2026-07-02",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-ana-02",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-ana",
+      "data": "2026-07-09",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-ana-03",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-ana",
+      "data": "2026-07-16",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-diego-01",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-diego",
+      "data": "2026-07-02",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-diego-02",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-diego",
+      "data": "2026-07-09",
+      "status": "PRESENTE"
+    },
+    {
+      "id": "pres-projeto-diego-03",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-diego",
+      "data": "2026-07-16",
+      "status": "FALTA"
+    }
+  ],
+  "notas": [
+    {
+      "id": "nota-fund-ana",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-ana",
+      "notaEtapa1": 8.0,
+      "notaEtapa2": 9.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-fund-bruno",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-bruno",
+      "notaEtapa1": 3.0,
+      "notaEtapa2": 4.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-fund-carla",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-carla",
+      "notaEtapa1": 9.0,
+      "notaEtapa2": 9.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-fund-diego",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-diego",
+      "notaEtapa1": 7.0,
+      "notaEtapa2": 8.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-fund-elisa",
+      "idTurma": "turma-fund-2025-1",
+      "idAluno": "aluno-elisa",
+      "notaEtapa1": 7.0,
+      "notaEtapa2": 7.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-testes-antiga-ana",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-ana",
+      "notaEtapa1": 8.0,
+      "notaEtapa2": 8.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-testes-antiga-diego",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-diego",
+      "notaEtapa1": 5.0,
+      "notaEtapa2": 5.0,
+      "notaRecuperacao": 7.0
+    },
+    {
+      "id": "nota-testes-antiga-elisa",
+      "idTurma": "turma-testes-2025-2",
+      "idAluno": "aluno-elisa",
+      "notaEtapa1": 4.0,
+      "notaEtapa2": 4.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-testes-atual-elisa",
+      "idTurma": "turma-testes-2026-2",
+      "idAluno": "aluno-elisa",
+      "notaEtapa1": 6.0,
+      "notaEtapa2": 5.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-projeto-ana",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-ana",
+      "notaEtapa1": 8.0,
+      "notaEtapa2": 9.0,
+      "notaRecuperacao": null
+    },
+    {
+      "id": "nota-projeto-diego",
+      "idTurma": "turma-projeto-2026-2",
+      "idAluno": "aluno-diego",
+      "notaEtapa1": 8.0,
+      "notaEtapa2": null,
+      "notaRecuperacao": null
+    }
+  ],
+  "historicos": [
+    {
+      "id": "hist-fund-ana",
+      "idAluno": "aluno-ana",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-fund-2025-1",
+      "mediaFinal": 8.5,
+      "percentualFrequencia": 100.0,
+      "situacao": "APROVADO",
+      "dataRegistro": "2025-06-30"
+    },
+    {
+      "id": "hist-fund-bruno",
+      "idAluno": "aluno-bruno",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-fund-2025-1",
+      "mediaFinal": 3.5,
+      "percentualFrequencia": 100.0,
+      "situacao": "REPROVADO_NOTA",
+      "dataRegistro": "2025-06-30"
+    },
+    {
+      "id": "hist-fund-carla",
+      "idAluno": "aluno-carla",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-fund-2025-1",
+      "mediaFinal": 9.0,
+      "percentualFrequencia": 25.0,
+      "situacao": "REPROVADO_FALTA",
+      "dataRegistro": "2025-06-30"
+    },
+    {
+      "id": "hist-fund-diego",
+      "idAluno": "aluno-diego",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-fund-2025-1",
+      "mediaFinal": 7.5,
+      "percentualFrequencia": 100.0,
+      "situacao": "APROVADO",
+      "dataRegistro": "2025-06-30"
+    },
+    {
+      "id": "hist-fund-elisa",
+      "idAluno": "aluno-elisa",
+      "idDisciplina": "disc-fundamentos",
+      "idPeriodoLetivo": "periodo-2025-1",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-fund-2025-1",
+      "mediaFinal": 7.0,
+      "percentualFrequencia": 75.0,
+      "situacao": "APROVADO",
+      "dataRegistro": "2025-06-30"
+    },
+    {
+      "id": "hist-testes-ana",
+      "idAluno": "aluno-ana",
+      "idDisciplina": "disc-testes",
+      "idPeriodoLetivo": "periodo-2025-2",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-testes-2025-2",
+      "mediaFinal": 8.0,
+      "percentualFrequencia": 100.0,
+      "situacao": "APROVADO",
+      "dataRegistro": "2025-12-15"
+    },
+    {
+      "id": "hist-testes-diego",
+      "idAluno": "aluno-diego",
+      "idDisciplina": "disc-testes",
+      "idPeriodoLetivo": "periodo-2025-2",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-testes-2025-2",
+      "mediaFinal": 7.0,
+      "percentualFrequencia": 100.0,
+      "situacao": "APROVADO",
+      "dataRegistro": "2025-12-15"
+    },
+    {
+      "id": "hist-testes-elisa",
+      "idAluno": "aluno-elisa",
+      "idDisciplina": "disc-testes",
+      "idPeriodoLetivo": "periodo-2025-2",
+      "idProfessor": "prof-demo",
+      "idTurma": "turma-testes-2025-2",
+      "mediaFinal": 4.0,
+      "percentualFrequencia": 100.0,
+      "situacao": "REPROVADO_NOTA",
+      "dataRegistro": "2025-12-15"
     }
   ]
 }
