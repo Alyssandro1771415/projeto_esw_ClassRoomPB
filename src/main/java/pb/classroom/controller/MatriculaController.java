@@ -7,9 +7,11 @@ import java.util.Iterator;
 import java.util.List;
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Disciplina;
+import pb.classroom.model.HistoricoAcademico;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
+import pb.classroom.model.SituacaoAcademica;
 import pb.classroom.model.StatusMatricula;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
@@ -21,13 +23,15 @@ public class MatriculaController {
   private final List<Turma> turmas;
   private final List<PeriodoLetivo> periodosLetivos;
   private final List<Disciplina> disciplinas;
+  private final List<HistoricoAcademico> historicos;
 
   public MatriculaController(
       AutenticacaoController autenticacaoController,
       List<Matricula> matriculas,
       List<Turma> turmas,
       List<PeriodoLetivo> periodosLetivos,
-      List<Disciplina> disciplinas) {
+      List<Disciplina> disciplinas,
+      List<HistoricoAcademico> historicos) {
     if (autenticacaoController == null) {
       throw new IllegalArgumentException("controle de autenticacao e obrigatorio");
     }
@@ -39,6 +43,22 @@ public class MatriculaController {
     this.turmas = turmas;
     this.periodosLetivos = periodosLetivos;
     this.disciplinas = disciplinas;
+    this.historicos = historicos != null ? historicos : new ArrayList<>();
+  }
+
+  public MatriculaController(
+      AutenticacaoController autenticacaoController,
+      List<Matricula> matriculas,
+      List<Turma> turmas,
+      List<PeriodoLetivo> periodosLetivos,
+      List<Disciplina> disciplinas) {
+    this(
+        autenticacaoController,
+        matriculas,
+        turmas,
+        periodosLetivos,
+        disciplinas,
+        new ArrayList<>());
   }
 
   public MatriculaController(
@@ -239,12 +259,22 @@ public class MatriculaController {
     }
 
     for (String idPreRequisito : disciplinaDaTurma.getPreRequisitosIds()) {
-      if (!alunoPossuiMatriculaConfirmadaEmDisciplina(idAluno, idPreRequisito)) {
+      if (!alunoAprovadoEmDisciplina(idAluno, idPreRequisito)) {
         Disciplina preReq = buscarDisciplinaPorId(idPreRequisito);
         String descricao = preReq != null ? preReq.getCodigo() : idPreRequisito;
         throw new IllegalArgumentException("Pré-requisito não atendido: " + descricao);
       }
     }
+  }
+
+  private boolean alunoAprovadoEmDisciplina(String idAluno, String idDisciplina) {
+    for (HistoricoAcademico historico : historicos) {
+      if (historico.getIdAluno().equals(idAluno)
+          && historico.getIdDisciplina().equals(idDisciplina)) {
+        return historico.getSituacao() == SituacaoAcademica.APROVADO;
+      }
+    }
+    return alunoPossuiMatriculaConfirmadaEmDisciplina(idAluno, idDisciplina);
   }
 
   private boolean alunoPossuiMatriculaConfirmadaEmDisciplina(String idAluno, String idDisciplina) {

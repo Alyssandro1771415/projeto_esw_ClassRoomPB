@@ -13,24 +13,31 @@ import java.util.Set;
 import pb.classroom.controller.AutenticacaoController;
 import pb.classroom.controller.CursoController;
 import pb.classroom.controller.DisciplinaController;
+import pb.classroom.controller.HistoricoAcademicoController;
 import pb.classroom.controller.MatriculaController;
+import pb.classroom.controller.NotaController;
 import pb.classroom.controller.PeriodoLetivoController;
 import pb.classroom.controller.PresencaController;
 import pb.classroom.controller.TurmaController;
 import pb.classroom.model.BlocoHorario;
 import pb.classroom.model.Curso;
 import pb.classroom.model.Disciplina;
+import pb.classroom.model.EtapaAvaliacao;
 import pb.classroom.model.FrequenciaAluno;
 import pb.classroom.model.FrequenciaDisciplinaAluno;
+import pb.classroom.model.HistoricoAcademico;
 import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.PeriodoLetivo;
 import pb.classroom.model.RegistroPresenca;
+import pb.classroom.model.ResultadoAvaliacao;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
 import pb.classroom.repository.CursoRepository;
 import pb.classroom.repository.DisciplinaRepository;
+import pb.classroom.repository.HistoricoAcademicoRepository;
 import pb.classroom.repository.MatriculaRepository;
+import pb.classroom.repository.NotaRepository;
 import pb.classroom.repository.PeriodoLetivoRepository;
 import pb.classroom.repository.PresencaRepository;
 import pb.classroom.repository.TurmaRepository;
@@ -46,6 +53,8 @@ public class ClassRoomCLI {
   private final TurmaController turmaController;
   private final MatriculaController matriculaController;
   private final PresencaController presencaController;
+  private final NotaController notaController;
+  private final HistoricoAcademicoController historicoAcademicoController;
   private final UsuarioRepository usuarioRepository;
   private final CursoRepository cursoRepository;
   private final DisciplinaRepository disciplinaRepository;
@@ -53,6 +62,9 @@ public class ClassRoomCLI {
   private final TurmaRepository turmaRepository;
   private final MatriculaRepository matriculaRepository;
   private final PresencaRepository presencaRepository;
+  private final NotaRepository notaRepository;
+  private final HistoricoAcademicoRepository historicoAcademicoRepository;
+  private final pb.classroom.controller.RelatorioController relatorioController;
 
   public ClassRoomCLI() {
     this(
@@ -63,7 +75,9 @@ public class ClassRoomCLI {
         new PeriodoLetivoRepository(),
         new TurmaRepository(),
         new MatriculaRepository(),
-        new PresencaRepository());
+        new PresencaRepository(),
+        new NotaRepository(),
+        new HistoricoAcademicoRepository());
   }
 
   ClassRoomCLI(Scanner scanner, UsuarioRepository usuarioRepository) {
@@ -75,7 +89,9 @@ public class ClassRoomCLI {
         new PeriodoLetivoRepository(),
         new TurmaRepository(),
         new MatriculaRepository(),
-        new PresencaRepository());
+        new PresencaRepository(),
+        new NotaRepository(),
+        new HistoricoAcademicoRepository());
   }
 
   ClassRoomCLI(
@@ -93,7 +109,9 @@ public class ClassRoomCLI {
         periodoLetivoRepository,
         turmaRepository,
         new MatriculaRepository(),
-        new PresencaRepository());
+        new PresencaRepository(),
+        new NotaRepository(),
+        new HistoricoAcademicoRepository());
   }
 
   ClassRoomCLI(
@@ -126,7 +144,15 @@ public class ClassRoomCLI {
                             .getParent()
                             .resolve("presencas.json")
                         : java.nio.file.Paths.get("presencas.json")))
-                : java.nio.file.Paths.get("presencas.json")));
+                : java.nio.file.Paths.get("presencas.json")),
+        new NotaRepository(
+            matriculaRepository.getCaminhoArquivo() != null
+                ? matriculaRepository.getCaminhoArquivo()
+                : java.nio.file.Paths.get("armazenamento_interno.json")),
+        new HistoricoAcademicoRepository(
+            matriculaRepository.getCaminhoArquivo() != null
+                ? matriculaRepository.getCaminhoArquivo()
+                : java.nio.file.Paths.get("armazenamento_interno.json")));
   }
 
   ClassRoomCLI(
@@ -138,6 +164,36 @@ public class ClassRoomCLI {
       TurmaRepository turmaRepository,
       MatriculaRepository matriculaRepository,
       PresencaRepository presencaRepository) {
+    this(
+        scanner,
+        usuarioRepository,
+        disciplinaRepository,
+        cursoRepository,
+        periodoLetivoRepository,
+        turmaRepository,
+        matriculaRepository,
+        presencaRepository,
+        new NotaRepository(
+            matriculaRepository.getCaminhoArquivo() != null
+                ? matriculaRepository.getCaminhoArquivo()
+                : java.nio.file.Paths.get("armazenamento_interno.json")),
+        new HistoricoAcademicoRepository(
+            matriculaRepository.getCaminhoArquivo() != null
+                ? matriculaRepository.getCaminhoArquivo()
+                : java.nio.file.Paths.get("armazenamento_interno.json")));
+  }
+
+  ClassRoomCLI(
+      Scanner scanner,
+      UsuarioRepository usuarioRepository,
+      DisciplinaRepository disciplinaRepository,
+      CursoRepository cursoRepository,
+      PeriodoLetivoRepository periodoLetivoRepository,
+      TurmaRepository turmaRepository,
+      MatriculaRepository matriculaRepository,
+      PresencaRepository presencaRepository,
+      NotaRepository notaRepository,
+      HistoricoAcademicoRepository historicoAcademicoRepository) {
     this.scanner = scanner;
     this.usuarioRepository = usuarioRepository;
     this.disciplinaRepository = disciplinaRepository;
@@ -146,6 +202,8 @@ public class ClassRoomCLI {
     this.turmaRepository = turmaRepository;
     this.matriculaRepository = matriculaRepository;
     this.presencaRepository = presencaRepository;
+    this.notaRepository = notaRepository;
+    this.historicoAcademicoRepository = historicoAcademicoRepository;
     this.autenticacaoController = new AutenticacaoController(usuarioRepository.carregarUsuarios());
     this.cursoController =
         new CursoController(autenticacaoController, cursoRepository.carregarCursos());
@@ -164,19 +222,45 @@ public class ClassRoomCLI {
             disciplinaController.getDisciplinas(),
             periodoLetivoController.getPeriodosLetivos(),
             autenticacaoController.getUsuarios());
+    List<HistoricoAcademico> historicosCompartilhados =
+        new ArrayList<>(historicoAcademicoRepository.carregarHistoricos());
     this.matriculaController =
         new MatriculaController(
             autenticacaoController,
             matriculaRepository.carregarMatriculas(),
             turmaController.getTurmas(),
             periodoLetivoController.getPeriodosLetivos(),
-            disciplinaController.getDisciplinas());
+            disciplinaController.getDisciplinas(),
+            historicosCompartilhados);
     this.presencaController =
         new PresencaController(
             autenticacaoController,
             presencaRepository.carregarPresencas(),
             turmaController.getTurmas(),
             matriculaController.getMatriculas());
+    this.historicoAcademicoController =
+        new HistoricoAcademicoController(
+            autenticacaoController,
+            historicosCompartilhados,
+            disciplinaController.getDisciplinas(),
+            autenticacaoController.getUsuarios());
+    this.notaController = new NotaController(
+        autenticacaoController,
+        presencaController,
+        notaRepository.carregarNotas(),
+        historicosCompartilhados,
+        turmaController.getTurmas(),
+        matriculaController.getMatriculas());
+    
+    this.relatorioController = new pb.classroom.controller.RelatorioController(
+        this.autenticacaoController,
+        this.turmaController.getTurmas(),
+        this.matriculaController.getMatriculas(),
+        this.autenticacaoController.getUsuarios(),
+        this.disciplinaController.getDisciplinas(),
+        historicosCompartilhados
+    );
+
   }
 
   public void iniciar() {
@@ -276,6 +360,50 @@ public class ClassRoomCLI {
         case "24":
           consultarMinhaFrequenciaPorDisciplina();
           break;
+        case "25":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            fecharTurma();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+            lancarNotas();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            consultarMinhasNotas();
+          } else {
+            System.out.println("Opção inválida.");
+          }
+          break;
+        case "26":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+            alterarNota();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            consultarNotasPorTurma();
+          } else {
+            System.out.println("Opção inválida.");
+          }
+          break;
+        case "27":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+            consultarMeuHistorico();
+          } else if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            consultarHistoricoAluno();
+          } else {
+            System.out.println("Opção inválida.");
+          }
+          break;
+        case "28":
+          consultarHistoricoPorCurso();
+          break;
+        case "29":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { gerarRelatorioAlunosPorTurma(); }
+          break;
+        case "30": // <-- ADICIONAR
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioOcupacaoVagas(); }
+          break;
+        case "31": // <-- ADICIONAR
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioReprovacaoDisciplina(); }
+        case "32": // <-- ADICIONAR ESTE BLOCO
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.ADMINISTRADOR)) { exibirRelatorioGeralUsuarios(); }
+          break;
+
         case "0":
           executando = false;
           System.out.println("Sistema encerrado.");
@@ -318,6 +446,7 @@ public class ClassRoomCLI {
         System.out.println("8 - Listar cursos");
         System.out.println("13 - Listar usuários");
         System.out.println("18 - Cadastrar curso");
+        System.out.println("32 - Gerar relatório geral de usuários");
         break;
       case COORDENADOR:
         System.out.println("5 - Cadastrar disciplina");
@@ -336,6 +465,13 @@ public class ClassRoomCLI {
         System.out.println("21 - Consultar presenças por turma");
         System.out.println("22 - Chamar próximos alunos da lista de espera");
         System.out.println("23 - Consultar percentual de frequência");
+        System.out.println("25 - Fechar turma");
+        System.out.println("26 - Consultar notas por turma");
+        System.out.println("27 - Consultar histórico de aluno");
+        System.out.println("28 - Consultar histórico por curso");
+        System.out.println("29 - Gerar relatório de alunos por turma");
+        System.out.println("30 - Gerar relatório de ocupação de vagas"); 
+        System.out.println("31 - Gerar relatório de reprovação por disciplina"); 
         break;
       case PROFESSOR:
         System.out.println("6 - Listar disciplinas");
@@ -345,6 +481,8 @@ public class ClassRoomCLI {
         System.out.println("20 - Registrar presença/falta");
         System.out.println("21 - Consultar presenças por turma");
         System.out.println("23 - Consultar percentual de frequência");
+        System.out.println("25 - Lançar notas (etapa1/etapa2)");
+        System.out.println("26 - Alterar nota");
         break;
       case ALUNO:
         System.out.println("24 - Consultar minha frequência por disciplina");
@@ -356,6 +494,8 @@ public class ClassRoomCLI {
         System.out.println("19 - Consultar posição na lista de espera");
         System.out.println("20 - Consultar minhas presenças");
         System.out.println("22 - Consultar meu percentual de frequência");
+        System.out.println("25 - Consultar minhas notas");
+        System.out.println("27 - Consultar meu histórico acadêmico");
         break;
       default:
         break;
@@ -705,8 +845,7 @@ public class ClassRoomCLI {
     }
     String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma (ou informe o ID): ");
     String idProfessor =
-        selecionarProfessorId(
-            "Escolha o número do novo professor responsável (ou informe o ID): ");
+        selecionarProfessorId("Escolha o número do novo professor responsável (ou informe o ID): ");
     String limiteVagasTexto = lerLinha("Novo limite de vagas: ");
     String sala = lerLinha("Nova sala: ");
     String dataInicioTexto = lerLinha("Nova data de início das aulas (AAAA-MM-DD): ");
@@ -1197,8 +1336,8 @@ public class ClassRoomCLI {
   }
 
   /**
-   * Exibe uma lista numerada de opções (descrição na ordem dos ids) e lê a escolha. Aceita o
-   * número ou o próprio ID informado.
+   * Exibe uma lista numerada de opções (descrição na ordem dos ids) e lê a escolha. Aceita o número
+   * ou o próprio ID informado.
    */
   private String selecionarPorLista(String rotulo, List<String> descricoes, List<String> ids) {
     for (int i = 0; i < descricoes.size(); i++) {
@@ -1559,7 +1698,9 @@ public class ClassRoomCLI {
       imprimirSeparador();
       for (Matricula matricula : promovidos) {
         System.out.println(
-            "Matrícula ID: " + matricula.getId() + " - Aluno: "
+            "Matrícula ID: "
+                + matricula.getId()
+                + " - Aluno: "
                 + descreverAluno(matricula.getIdAluno()));
         imprimirSeparador();
       }
@@ -1699,4 +1840,440 @@ public class ClassRoomCLI {
       System.out.println(frequencia.getMensagemAlerta());
     }
   }
+
+  // ==================== RF31–RF35 – Notas e Avaliação ====================
+
+  private void lancarNotas() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Apenas professores podem lançar notas.");
+      return;
+    }
+
+    List<Turma> turmas = turmasDoProfessorLogado();
+    if (turmas.isEmpty()) {
+      System.out.println("Você não é responsável por nenhuma turma.");
+      return;
+    }
+
+    String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma (ou informe o ID): ");
+    String etapaTexto = lerLinha("Etapa (1 ou 2): ").trim();
+    EtapaAvaliacao etapa = parseEtapa(etapaTexto);
+
+    List<Matricula> matriculasConfirmadas = listarMatriculasConfirmadas(idTurma);
+    if (matriculasConfirmadas.isEmpty()) {
+      System.out.println("Nenhum aluno matriculado (confirmado) nesta turma.");
+      return;
+    }
+
+    try {
+      System.out.println("Informe a nota (0.0 a 10.0) para cada aluno:");
+      imprimirSeparador();
+      for (Matricula matricula : matriculasConfirmadas) {
+        String notaTexto =
+            lerLinha("Aluno " + descreverAluno(matricula.getIdAluno()) + ": ").trim();
+        double nota = Double.parseDouble(notaTexto.replace(',', '.'));
+        notaController.lancarNota(idTurma, matricula.getIdAluno(), etapa, nota);
+        imprimirSeparador();
+      }
+      notaRepository.salvarNotas(notaController.getNotas());
+      System.out.println("Notas lançadas com sucesso.");
+    } catch (NumberFormatException e) {
+      System.out.println("Nota inválida. Use um número entre 0.0 e 10.0.");
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void alterarNota() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Apenas professores podem alterar notas.");
+      return;
+    }
+
+    List<Turma> turmas = turmasDoProfessorLogado();
+    if (turmas.isEmpty()) {
+      System.out.println("Você não é responsável por nenhuma turma.");
+      return;
+    }
+
+    String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma (ou informe o ID): ");
+    List<Matricula> matriculasConfirmadas = listarMatriculasConfirmadas(idTurma);
+    if (matriculasConfirmadas.isEmpty()) {
+      System.out.println("Nenhum aluno matriculado (confirmado) nesta turma.");
+      return;
+    }
+
+    List<String> descricoes = new ArrayList<>();
+    List<String> ids = new ArrayList<>();
+    for (Matricula matricula : matriculasConfirmadas) {
+      descricoes.add(descreverAluno(matricula.getIdAluno()));
+      ids.add(matricula.getIdAluno());
+    }
+
+    String idAluno = selecionarPorLista("Escolha o aluno (ou informe o ID): ", descricoes, ids);
+    String etapaTexto = lerLinha("Etapa (1 ou 2): ").trim();
+    String notaTexto = lerLinha("Nova nota (0.0 a 10.0): ").trim();
+
+    try {
+      EtapaAvaliacao etapa = parseEtapa(etapaTexto);
+      double nota = Double.parseDouble(notaTexto.replace(',', '.'));
+      notaController.alterarNota(idTurma, idAluno, etapa, nota);
+      notaRepository.salvarNotas(notaController.getNotas());
+      System.out.println("Nota alterada com sucesso.");
+    } catch (NumberFormatException e) {
+      System.out.println("Nota inválida. Use um número entre 0.0 e 10.0.");
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarMinhasNotas() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar suas notas.");
+      return;
+    }
+
+    try {
+      List<ResultadoAvaliacao> resultados = notaController.consultarMinhasNotas();
+      if (resultados.isEmpty()) {
+        System.out.println("Você não possui matrículas confirmadas.");
+        return;
+      }
+
+      System.out.println("Suas notas e situação:");
+      imprimirSeparador();
+      for (ResultadoAvaliacao resultado : resultados) {
+        exibirResultadoAvaliacao(resultado);
+        imprimirSeparador();
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarNotasPorTurma() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)
+        && !usuarioLogadoPossuiPerfil(PerfilUsuario.PROFESSOR)) {
+      System.out.println("Funcionalidade não disponível para seu perfil.");
+      return;
+    }
+
+    boolean coordenador = usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR);
+    List<Turma> turmas = coordenador ? turmaController.getTurmas() : turmasDoProfessorLogado();
+    if (turmas.isEmpty()) {
+      System.out.println("Nenhuma turma disponível para consulta.");
+      return;
+    }
+
+    String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma (ou informe o ID): ");
+
+    try {
+      List<ResultadoAvaliacao> resultados = notaController.consultarResultadosPorTurma(idTurma);
+      if (resultados.isEmpty()) {
+        System.out.println("Nenhum aluno matriculado nesta turma.");
+        return;
+      }
+
+      System.out.println("Notas e situação da turma " + idTurma + ":");
+      imprimirSeparador();
+      for (ResultadoAvaliacao resultado : resultados) {
+        exibirResultadoAvaliacao(resultado);
+        imprimirSeparador();
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void fecharTurma() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem fechar turmas.");
+      return;
+    }
+
+    List<Turma> turmas = turmaController.getTurmas();
+    if (turmas.isEmpty()) {
+      System.out.println("Nenhuma turma cadastrada.");
+      return;
+    }
+
+    String idTurma =
+        selecionarTurmaId(turmas, "Escolha o número da turma a fechar (ou informe o ID): ");
+
+    try {
+      List<HistoricoAcademico> gerados = notaController.fecharTurma(idTurma);
+      turmaRepository.salvarTurmas(turmaController.getTurmas());
+      notaRepository.salvarNotas(notaController.getNotas());
+      historicoAcademicoRepository.salvarHistoricos(historicoAcademicoController.getHistoricos());
+      System.out.println(
+          "Turma fechada com sucesso. " + gerados.size() + " registro(s) de histórico gerado(s).");
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  // ==================== RF36–RF39 – Histórico Acadêmico ====================
+
+  private void consultarMeuHistorico() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.ALUNO)) {
+      System.out.println("Apenas alunos podem consultar seu histórico acadêmico.");
+      return;
+    }
+
+    try {
+      List<HistoricoAcademico> historicos = historicoAcademicoController.consultarMeuHistorico();
+      if (historicos.isEmpty()) {
+        System.out.println("Nenhum registro no histórico acadêmico.");
+        return;
+      }
+
+      System.out.println("Seu histórico acadêmico:");
+      imprimirSeparador();
+      for (HistoricoAcademico historico : historicos) {
+        exibirHistorico(historico);
+        imprimirSeparador();
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarHistoricoAluno() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem consultar histórico de alunos.");
+      return;
+    }
+
+    String idAluno = lerLinha("ID do aluno: ").trim();
+
+    try {
+      List<HistoricoAcademico> historicos =
+          historicoAcademicoController.consultarHistoricoAluno(idAluno);
+      if (historicos.isEmpty()) {
+        System.out.println("Nenhum registro no histórico acadêmico deste aluno.");
+        return;
+      }
+
+      System.out.println("Histórico acadêmico de " + descreverAluno(idAluno) + ":");
+      imprimirSeparador();
+      for (HistoricoAcademico historico : historicos) {
+        exibirHistorico(historico);
+        imprimirSeparador();
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private void consultarHistoricoPorCurso() {
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem consultar histórico por curso.");
+      return;
+    }
+
+    List<Curso> cursos = cursoController.getCursos();
+    if (cursos.isEmpty()) {
+      System.out.println("Nenhum curso cadastrado.");
+      return;
+    }
+
+    List<String> descricoes = new ArrayList<>();
+    List<String> ids = new ArrayList<>();
+    for (Curso curso : cursos) {
+      descricoes.add(curso.getNome() + " (" + curso.getCodigo() + ")");
+      ids.add(curso.getId());
+    }
+
+    String idCurso = selecionarPorLista("Escolha o curso (ou informe o ID): ", descricoes, ids);
+
+    try {
+      List<HistoricoAcademico> historicos =
+          historicoAcademicoController.consultarHistoricoPorCurso(idCurso);
+      if (historicos.isEmpty()) {
+        System.out.println("Nenhum registro no histórico acadêmico deste curso.");
+        return;
+      }
+
+      System.out.println("Histórico acadêmico do curso:");
+      imprimirSeparador();
+      for (HistoricoAcademico historico : historicos) {
+        exibirHistorico(historico);
+        imprimirSeparador();
+      }
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
+
+  private List<Matricula> listarMatriculasConfirmadas(String idTurma) {
+    List<Matricula> confirmadas = new ArrayList<>();
+    for (Matricula matricula : matriculaController.getMatriculas()) {
+      if (matricula.getIdTurma().equals(idTurma) && matricula.isConfirmada()) {
+        confirmadas.add(matricula);
+      }
+    }
+    return confirmadas;
+  }
+
+  private EtapaAvaliacao parseEtapa(String etapaTexto) {
+    if ("1".equals(etapaTexto)) {
+      return EtapaAvaliacao.ETAPA1;
+    }
+    if ("2".equals(etapaTexto)) {
+      return EtapaAvaliacao.ETAPA2;
+    }
+    throw new IllegalArgumentException("Etapa inválida. Informe 1 ou 2.");
+  }
+
+  private void exibirResultadoAvaliacao(ResultadoAvaliacao resultado) {
+    Turma turma = buscarTurmaPorId(resultado.getIdTurma());
+    if (turma != null) {
+      System.out.println("Turma: " + descreverTurma(turma));
+    }
+    System.out.println("Aluno: " + descreverAluno(resultado.getIdAluno()));
+    System.out.println(
+        "Etapa 1: "
+            + formatarNota(resultado.getNotaEtapa1())
+            + " | Etapa 2: "
+            + formatarNota(resultado.getNotaEtapa2())
+            + " | Recuperação: "
+            + formatarNota(resultado.getNotaRecuperacao()));
+    System.out.println(
+        "Média final: "
+            + formatarNota(resultado.getMediaFinal())
+            + " | Frequência: "
+            + String.format("%.1f", resultado.getPercentualFrequencia())
+            + "%");
+    System.out.println("Situação: " + resultado.getSituacao());
+  }
+
+  private void exibirHistorico(HistoricoAcademico historico) {
+    Disciplina disciplina = buscarDisciplinaPorId(historico.getIdDisciplina());
+    PeriodoLetivo periodo = buscarPeriodoPorId(historico.getIdPeriodoLetivo());
+    System.out.println("Aluno: " + descreverAluno(historico.getIdAluno()));
+    if (disciplina != null) {
+      System.out.println("Disciplina: " + disciplina.getCodigo() + " - " + disciplina.getNome());
+    }
+    if (periodo != null) {
+      System.out.println("Período: " + periodo.getCodigo());
+    }
+    System.out.println("Professor: " + descreverProfessor(historico.getIdProfessor()));
+    System.out.println(
+        "Média final: "
+            + formatarNota(historico.getMediaFinal())
+            + " | Frequência: "
+            + String.format("%.1f", historico.getPercentualFrequencia())
+            + "%");
+    System.out.println("Situação: " + historico.getSituacao());
+    System.out.println("Data do registro: " + historico.getDataRegistro());
+  }
+
+  private String formatarNota(Double nota) {
+    return nota == null ? "-" : String.format("%.1f", nota);
+  }
+
+  private String descreverProfessor(String idProfessor) {
+    for (Usuario usuario : autenticacaoController.getUsuarios()) {
+      if (usuario.getId().equals(idProfessor)) {
+        return usuario.getNome() + " (" + usuario.getMatricula() + ")";
+      }
+    }
+    return idProfessor;
+  }
+
+  private void gerarRelatorioAlunosPorTurma() {
+  if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+    System.out.println("Apenas coordenadores podem gerar relatórios.");
+    return;
+  }
+
+  List<Turma> turmas = turmaController.getTurmas();
+  if (turmas.isEmpty()) {
+    System.out.println("Nenhuma turma cadastrada.");
+    return;
+  }
+
+  String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma para o relatório (ou informe o ID): ");
+
+  try {
+    List<Usuario> alunos = relatorioController.gerarRelatorioAlunosPorTurma(idTurma);
+    
+    limparTerminal();
+    System.out.println("====== RELATÓRIO DE ALUNOS MATRICULADOS ======");
+    System.out.println("ID da Turma: " + idTurma);
+    System.out.println("Total de Alunos Confirmados: " + alunos.size());
+    imprimirSeparador();
+    
+    if (alunos.isEmpty()) {
+      System.out.println("Não há alunos com matrícula CONFIRMADA nesta turma.");
+    } else {
+      System.out.printf("%-15s | %-30s | %-30s%n", "MATRÍCULA", "NOME", "E-MAIL");
+      imprimirSeparador();
+      for (Usuario aluno : alunos) {
+        System.out.printf("%-15s | %-30s | %-30s%n", 
+            aluno.getMatricula(), 
+            aluno.getNome(), 
+            aluno.getEmail());
+      }
+    }
+    imprimirSeparador();
+  } catch (IllegalArgumentException e) {
+    System.out.println(e.getMessage());
+  }
+
+}
+
+  private void exibirRelatorioOcupacaoVagas() {
+  limparTerminal();
+  System.out.println("====== RELATÓRIO DE OCUPAÇÃO DE VAGAS ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioOcupacaoVagas();
+    if (linhas.isEmpty()) {
+      System.out.println("Nenhuma turma ativa encontrada para monitorar.");
+    } else {
+      for (String linha : linhas) {
+        System.out.println(linha);
+      }
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+
+private void exibirRelatorioReprovacaoDisciplina() {
+  String idDisciplina = selecionarDisciplinaId("Escolha a disciplina para analisar a taxa de reprovação (ou informe o ID): ");
+  limparTerminal();
+  System.out.println("====== RELATÓRIO DE REPROVAÇÃO POR DISCIPLINA ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioReprovacaoPorDisciplina(idDisciplina);
+    for (String linha : linhas) {
+      System.out.println(linha);
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+private void exibirRelatorioGeralUsuarios() {
+  limparTerminal();
+  System.out.println("====== RELATÓRIO GERAL DE USUÁRIOS CADASTRADOS ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioGeralUsuarios();
+    if (linhas.isEmpty()) {
+      System.out.println("Nenhum usuário cadastrado no sistema.");
+    } else {
+      for (String linha : linhas) {
+        System.out.println(linha);
+      }
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+
 }

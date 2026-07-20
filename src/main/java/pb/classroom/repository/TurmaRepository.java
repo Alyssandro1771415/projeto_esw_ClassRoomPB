@@ -65,7 +65,9 @@ public class TurmaRepository {
               periodosLetivosJson,
               converterTurmasParaJson(turmas),
               matriculasJson,
-              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"));
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"),
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "notas"),
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "historicos"));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível salvar as turmas.", e);
@@ -91,6 +93,7 @@ public class TurmaRepository {
       LocalDate dataInicioAulas = LocalDate.parse(obterTexto(objeto, "dataInicioAulas"));
       List<BlocoHorario> horarios = obterHorarios(objeto);
       boolean cancelada = obterBooleano(objeto, "cancelada");
+      boolean fechada = obterBooleanoOpcional(objeto, "fechada");
 
       turmas.add(
           new Turma(
@@ -102,7 +105,8 @@ public class TurmaRepository {
               sala,
               dataInicioAulas,
               horarios,
-              cancelada));
+              cancelada,
+              fechada));
     }
 
     return turmas;
@@ -133,7 +137,8 @@ public class TurmaRepository {
       json.append("      \"horarios\": ");
       adicionarHorarios(json, turma.getHorarios());
       json.append(",\n");
-      json.append("      \"cancelada\": ").append(turma.isCancelada()).append("\n");
+      json.append("      \"cancelada\": ").append(turma.isCancelada()).append(",\n");
+      json.append("      \"fechada\": ").append(turma.isFechada()).append("\n");
       json.append("    }");
 
       if (i < turmas.size() - 1) {
@@ -201,6 +206,14 @@ public class TurmaRepository {
     Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*(true|false)").matcher(objeto);
     if (!matcher.find()) {
       throw new IllegalArgumentException("Campo obrigatório ausente no armazenamento: " + campo);
+    }
+    return Boolean.parseBoolean(matcher.group(1));
+  }
+
+  private boolean obterBooleanoOpcional(String objeto, String campo) {
+    Matcher matcher = Pattern.compile("\"" + campo + "\"\\s*:\\s*(true|false)").matcher(objeto);
+    if (!matcher.find()) {
+      return false;
     }
     return Boolean.parseBoolean(matcher.group(1));
   }

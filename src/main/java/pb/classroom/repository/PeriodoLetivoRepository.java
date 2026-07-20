@@ -60,7 +60,9 @@ public class PeriodoLetivoRepository {
               converterPeriodosParaJson(periodosLetivos),
               turmasJson,
               matriculasJson,
-              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"));
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "presencas"),
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "notas"),
+              ArmazenamentoJson.extrairArrayOuVazio(conteudoAtual, "historicos"));
       Files.write(caminhoArquivo, documento.getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {
       throw new IllegalStateException("Não foi possível salvar os períodos letivos.", e);
