@@ -20,8 +20,9 @@ LARGE_DIAGRAMS = {"diagrama-casos-de-uso", "diagrama-classes"}
 # md relativo a FONTES -> pasta de saída em releases/diagramas
 OUTPUT_DIRS: dict[str, Path] = {
     "": DIAGRAMAS,
-    "documentacao-rf15-rf22": DIAGRAMAS / "documentacao-rf15-rf22" / "Documentação Release 1",
-    "documentacao-rf23-rf30": DIAGRAMAS / "documentacao-rf23-rf30" / "Documentação Release 2",
+    "documentacao-rf15-rf22": DIAGRAMAS / "documentacao-rf15-rf22",
+    "documentacao-rf23-rf30": DIAGRAMAS / "documentacao-rf23-rf30",
+    "documentacao-rf31-rf43": DIAGRAMAS / "documentacao-rf31-rf43",
 }
 
 
@@ -108,8 +109,9 @@ def convert_all() -> list[Path]:
 
     # Diagramas gerais não ficam nas pastas de RF
     for sub in (
-        DIAGRAMAS / "documentacao-rf23-rf30" / "Documentação Release 2",
-        DIAGRAMAS / "documentacao-rf15-rf22" / "Documentação Release 1",
+        DIAGRAMAS / "documentacao-rf15-rf22",
+        DIAGRAMAS / "documentacao-rf23-rf30",
+        DIAGRAMAS / "documentacao-rf31-rf43",
     ):
         for name in ("diagrama-casos-de-uso.png", "diagrama-classes.png"):
             stale = sub / name

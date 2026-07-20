@@ -2,7 +2,7 @@
 
 Gerado automaticamente apos a execucao dos testes Maven.
 
-Data/hora: 2026-07-20 18:04:28
+Data/hora: 2026-07-20 18:29:40
 
 Comando esperado:
 
@@ -15,7 +15,7 @@ mvn clean test
 Resultado:
 
 - Build: SUCCESS
-- Total de testes: 271
+- Total de testes: 281
 - Falhas: 0
 - Erros: 0
 - Ignorados: 0
@@ -51,10 +51,11 @@ Suites executadas:
 - pb.classroom.model.EntidadesModeloTest$UsuarioTests: 4 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.FrequenciaAlunoTest: 5 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.FrequenciaDisciplinaAlunoTest: 11 testes, 0 falhas, 0 erros, 0 ignorados
+- pb.classroom.model.HistoricoAcademicoCoberturaTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.HistoricoAcademicoTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.RegistroNotaTest: 3 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.RegistroPresencaTest: 9 testes, 0 falhas, 0 erros, 0 ignorados
-- pb.classroom.model.ResultadoAvaliacaoTest: 4 testes, 0 falhas, 0 erros, 0 ignorados
+- pb.classroom.model.ResultadoAvaliacaoTest: 8 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.model.UsuarioAtribuicaoTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.report.PdfRelatorioWriterTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.repository.ArmazenamentoJsonTest: 3 testes, 0 falhas, 0 erros, 0 ignorados
@@ -68,4 +69,5 @@ Suites executadas:
 - pb.classroom.repository.TurmaRepositoryTest: 2 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.repository.UsuarioRepositoryTest: 3 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.view.ClassRoomCLIFluxosIntegradosTest: 19 testes, 0 falhas, 0 erros, 0 ignorados
+- pb.classroom.view.ClassRoomCLINotasRelatoriosTest: 4 testes, 0 falhas, 0 erros, 0 ignorados
 - pb.classroom.view.ClassRoomCLITest: 2 testes, 0 falhas, 0 erros, 0 ignorados

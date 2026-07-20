@@ -38,6 +38,28 @@ flowchart TB
         UC30["**RF30 — Alertar abaixo do mínimo**"]
     end
 
+    subgraph NotasAvaliacao
+        UC31["**RF31 — Lançar notas etapa1/etapa2**"]
+        UC32["**RF32 — Calcular média final**"]
+        UC33["**RF33 — Consultar notas**"]
+        UC34["**RF34 — Informar situação acadêmica**"]
+        UC35["**RF35 — Alterar notas antes do fechamento**"]
+    end
+
+    subgraph HistoricoAcademico
+        UC36["**RF36 — Manter histórico de disciplinas**"]
+        UC37["**RF37 — Registrar dados do histórico**"]
+        UC38["**RF38 — Aluno consulta histórico**"]
+        UC39["**RF39 — Coordenador consulta histórico**"]
+    end
+
+    subgraph Relatorios
+        UC40["**RF40 — Relatório alunos por turma**"]
+        UC41["**RF41 — Relatório ocupação de vagas**"]
+        UC42["**RF42 — Relatório reprovação por disciplina**"]
+        UC43["**RF43 — Relatório geral de usuários**"]
+    end
+
     subgraph Consultas
         UC09[Listar cursos / disciplinas / turmas]
         UC10[Consultar presenças]
@@ -47,6 +69,7 @@ flowchart TB
     ADM --> UC02
     ADM --> UC03
     ADM --> UC09
+    ADM --> UC43
 
     COORD --> UC01
     COORD --> UC04
@@ -58,6 +81,12 @@ flowchart TB
     COORD --> UC26
     COORD --> UC28
     COORD --> UC10
+    COORD --> UC35
+    COORD --> UC36
+    COORD --> UC39
+    COORD --> UC40
+    COORD --> UC41
+    COORD --> UC42
 
     PROF --> UC01
     PROF --> UC09
@@ -65,6 +94,10 @@ flowchart TB
     PROF --> UC27
     PROF --> UC28
     PROF --> UC10
+    PROF --> UC31
+    PROF --> UC32
+    PROF --> UC34
+    PROF --> UC35
 
     ALU --> UC01
     ALU --> UC07
@@ -76,10 +109,17 @@ flowchart TB
     ALU --> UC29
     ALU --> UC30
     ALU --> UC10
+    ALU --> UC33
+    ALU --> UC34
+    ALU --> UC38
 
     UC07 -.->|sem vaga| UC23
     UC08 -.->|libera vaga| UC24
     UC24 -.->|usa| UC25
     UC28 -.->|pode acionar| UC30
     UC29 -.->|pode acionar| UC30
+    UC31 -.->|dispara| UC32
+    UC32 -.->|define| UC34
+    UC35 -.->|ao fechar turma| UC36
+    UC36 -.->|registra| UC37
 ```

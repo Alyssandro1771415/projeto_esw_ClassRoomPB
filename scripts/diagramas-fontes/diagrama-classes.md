@@ -4,172 +4,136 @@
 classDiagram
     direction TB
 
-    class Main {
-        +main(String[] args)$
-    }
-
     class ClassRoomCLI {
-        -Scanner scanner
-        -AutenticacaoController autenticacaoController
-        -MatriculaController matriculaController
-        -PresencaController presencaController
-        -TurmaController turmaController
         +iniciar()
     }
 
     class AutenticacaoController {
-        -List~Usuario~ usuarios
-        -Usuario usuarioLogado
         +login(String, String) Usuario
         +logout()
         +isAutenticado() boolean
-        +getUsuarioLogado() Usuario
     }
 
-    class MatriculaController {
-        -List~Matricula~ matriculas
-        -List~Turma~ turmas
-        +solicitarMatricula(String) Matricula
-        +cancelarMatricula(String) Matricula
-        +consultarListaEspera(String) List
-        +visualizarListaEsperaPorTurma(String) List
-        +consultarPosicaoAluno(String) int
-        +removerAlunoListaEspera(String, String) Matricula
-        +processarChamadaAutomaticaListaEspera(String) List
-        +chamarProximosAlunosListaEsperaManualmente(String) List
+    class NotaController {
+        +lancarNota(...) RegistroNota
+        +alterarNota(...) RegistroNota
+        +calcularResultado(...) ResultadoAvaliacao
+        +consultarMinhasNotas() List
+        +fecharTurma(String) List
+    }
+
+    class HistoricoAcademicoController {
+        +consultarMeuHistorico() List
+        +consultarHistoricoAluno(String) List
+        +consultarHistoricoPorCurso(String) List
+    }
+
+    class RelatorioController {
+        +gerarRelatorioAlunosPorTurma(String) List
+        +gerarRelatorioOcupacaoVagas() List
+        +gerarRelatorioReprovacaoPorDisciplina(String) List
+        +gerarRelatorioGeralUsuarios() List
+        +exportar*Pdf(...) Path
     }
 
     class PresencaController {
-        -List~RegistroPresenca~ registros
-        -List~Matricula~ matriculas
-        +registrarPresenca(String, LocalDate, Map) List
-        +consultarPresencasPorTurma(String) List
+        +registrarPresenca(...) List
         +calcularFrequenciaPorTurma(String) List
-        +consultarMinhaFrequencia(String) FrequenciaAluno
-        +consultarMinhaFrequenciaPorDisciplina(String) FrequenciaDisciplinaAluno
-        +consultarMinhasFrequenciasPorDisciplina() List
     }
 
-    class TurmaController {
-        +ofertarTurma(...) Turma
-        +alterarTurma(...) Turma
-        +cancelarTurma(String) Turma
-        +consultarTurmasDisponiveisParaAluno() List
-        +consultarDisciplinasDisponiveisParaAluno() List
+    class MatriculaController {
+        +solicitarMatricula(String) Matricula
+        +cancelarMatricula(String) Matricula
     }
 
-    class CursoController {
-        +cadastrarCurso(String, String) Curso
-    }
-
-    class DisciplinaController {
-        +cadastrarDisciplina(...) Disciplina
-    }
-
-    class PeriodoLetivoController {
-        +cadastrarPeriodoLetivo(String) PeriodoLetivo
-        +ativarPeriodoLetivo(String) PeriodoLetivo
+    class PdfRelatorioWriter {
+        +escrever(Path, String, List)$ Path
     }
 
     class Usuario {
-        -String id
         -PerfilUsuario perfil
         -String matricula
     }
 
+    class Turma {
+        -boolean fechada
+        -int limiteVagas
+        +isFechada() boolean
+    }
+
     class Matricula {
-        -String id
-        -String idAluno
-        -String idTurma
         -StatusMatricula status
         +isConfirmada() boolean
-        +isEmEspera() boolean
     }
 
-    class Turma {
-        -String id
+    class RegistroNota {
+        -Double notaEtapa1
+        -Double notaEtapa2
+        -Double notaRecuperacao
+        +definirNota(EtapaAvaliacao, double)
+    }
+
+    class ResultadoAvaliacao {
+        -Double mediaFinal
+        -SituacaoAcademica situacao
+    }
+
+    class HistoricoAcademico {
+        -String idPeriodoLetivo
         -String idDisciplina
-        -int limiteVagas
-        -List~BlocoHorario~ horarios
-    }
-
-    class Disciplina {
-        -String id
-        -String codigo
-        -List~String~ preRequisitosIds
+        -String idProfessor
+        -Double mediaFinal
+        -double percentualFrequencia
+        -SituacaoAcademica situacao
     }
 
     class RegistroPresenca {
-        -String id
-        -LocalDate data
         -StatusPresenca status
     }
 
-    class FrequenciaAluno {
-        -double percentual
-        +isAbaixoDoMinimoExigido() boolean
-    }
-
-    class FrequenciaDisciplinaAluno {
-        -double percentual
-        +getMensagemAlerta() String
-    }
-
-    class StatusMatricula {
+    class EtapaAvaliacao {
         <<enumeration>>
-        CONFIRMADA
-        EM_ESPERA
+        ETAPA1
+        ETAPA2
+        RECUPERACAO
     }
 
-    class StatusPresenca {
+    class SituacaoAcademica {
         <<enumeration>>
-        PRESENTE
-        FALTA
+        APROVADO
+        REPROVADO_NOTA
+        REPROVADO_FALTA
+        EM_RECUPERACAO
+        EM_ANDAMENTO
     }
 
-    class PerfilUsuario {
-        <<enumeration>>
-        ALUNO
-        PROFESSOR
-        COORDENADOR
-        ADMINISTRADOR
+    class NotaRepository {
+        +salvarNotas(List)
     }
 
-    class MatriculaRepository {
-        +carregarMatriculas() List
-        +salvarMatriculas(List)
+    class HistoricoAcademicoRepository {
+        +salvarHistoricos(List)
     }
 
-    class PresencaRepository {
-        +carregarPresencas() List
-        +salvarPresencas(List)
-    }
-
-    Main --> ClassRoomCLI
     ClassRoomCLI --> AutenticacaoController
-    ClassRoomCLI --> MatriculaController
+    ClassRoomCLI --> NotaController
+    ClassRoomCLI --> HistoricoAcademicoController
+    ClassRoomCLI --> RelatorioController
     ClassRoomCLI --> PresencaController
-    ClassRoomCLI --> TurmaController
-    ClassRoomCLI --> MatriculaRepository
-    ClassRoomCLI --> PresencaRepository
+    ClassRoomCLI --> MatriculaController
 
-    MatriculaController --> AutenticacaoController
-    MatriculaController --> Matricula
-    MatriculaController --> Turma
-    MatriculaController --> Disciplina
+    NotaController --> RegistroNota
+    NotaController --> ResultadoAvaliacao
+    NotaController --> HistoricoAcademico
+    NotaController --> PresencaController
+    HistoricoAcademicoController --> HistoricoAcademico
+    RelatorioController --> PdfRelatorioWriter
+    RelatorioController --> HistoricoAcademico
 
-    PresencaController --> AutenticacaoController
-    PresencaController --> RegistroPresenca
-    PresencaController --> FrequenciaAluno
-    PresencaController --> FrequenciaDisciplinaAluno
-
-    Matricula --> StatusMatricula
-    RegistroPresenca --> StatusPresenca
-    Usuario --> PerfilUsuario
-    Turma --> BlocoHorario
-    Turma --> Disciplina
-    Disciplina --> Curso
-
-    MatriculaRepository ..> Matricula : persiste
-    PresencaRepository ..> RegistroPresenca : persiste
+    RegistroNota --> EtapaAvaliacao
+    ResultadoAvaliacao --> SituacaoAcademica
+    HistoricoAcademico --> SituacaoAcademica
+    Turma --> Matricula
+    NotaRepository ..> RegistroNota : persiste
+    HistoricoAcademicoRepository ..> HistoricoAcademico : persiste
 ```
