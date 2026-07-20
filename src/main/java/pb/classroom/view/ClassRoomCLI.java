@@ -64,6 +64,7 @@ public class ClassRoomCLI {
   private final PresencaRepository presencaRepository;
   private final NotaRepository notaRepository;
   private final HistoricoAcademicoRepository historicoAcademicoRepository;
+  private final pb.classroom.controller.RelatorioController relatorioController;
 
   public ClassRoomCLI() {
     this(
@@ -243,14 +244,23 @@ public class ClassRoomCLI {
             historicosCompartilhados,
             disciplinaController.getDisciplinas(),
             autenticacaoController.getUsuarios());
-    this.notaController =
-        new NotaController(
-            autenticacaoController,
-            presencaController,
-            notaRepository.carregarNotas(),
-            historicosCompartilhados,
-            turmaController.getTurmas(),
-            matriculaController.getMatriculas());
+    this.notaController = new NotaController(
+        autenticacaoController,
+        presencaController,
+        notaRepository.carregarNotas(),
+        historicosCompartilhados,
+        turmaController.getTurmas(),
+        matriculaController.getMatriculas());
+    
+    this.relatorioController = new pb.classroom.controller.RelatorioController(
+        this.autenticacaoController,
+        this.turmaController.getTurmas(),
+        this.matriculaController.getMatriculas(),
+        this.autenticacaoController.getUsuarios(),
+        this.disciplinaController.getDisciplinas(),
+        historicosCompartilhados
+    );
+
   }
 
   public void iniciar() {
@@ -382,6 +392,18 @@ public class ClassRoomCLI {
         case "28":
           consultarHistoricoPorCurso();
           break;
+        case "29":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { gerarRelatorioAlunosPorTurma(); }
+          break;
+        case "30": // <-- ADICIONAR
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioOcupacaoVagas(); }
+          break;
+        case "31": // <-- ADICIONAR
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioReprovacaoDisciplina(); }
+        case "32": // <-- ADICIONAR ESTE BLOCO
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.ADMINISTRADOR)) { exibirRelatorioGeralUsuarios(); }
+          break;
+
         case "0":
           executando = false;
           System.out.println("Sistema encerrado.");
@@ -424,6 +446,7 @@ public class ClassRoomCLI {
         System.out.println("8 - Listar cursos");
         System.out.println("13 - Listar usuários");
         System.out.println("18 - Cadastrar curso");
+        System.out.println("32 - Gerar relatório geral de usuários");
         break;
       case COORDENADOR:
         System.out.println("5 - Cadastrar disciplina");
@@ -446,6 +469,9 @@ public class ClassRoomCLI {
         System.out.println("26 - Consultar notas por turma");
         System.out.println("27 - Consultar histórico de aluno");
         System.out.println("28 - Consultar histórico por curso");
+        System.out.println("29 - Gerar relatório de alunos por turma");
+        System.out.println("30 - Gerar relatório de ocupação de vagas"); 
+        System.out.println("31 - Gerar relatório de reprovação por disciplina"); 
         break;
       case PROFESSOR:
         System.out.println("6 - Listar disciplinas");
@@ -2154,4 +2180,100 @@ public class ClassRoomCLI {
     }
     return idProfessor;
   }
+
+  private void gerarRelatorioAlunosPorTurma() {
+  if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+    System.out.println("Apenas coordenadores podem gerar relatórios.");
+    return;
+  }
+
+  List<Turma> turmas = turmaController.getTurmas();
+  if (turmas.isEmpty()) {
+    System.out.println("Nenhuma turma cadastrada.");
+    return;
+  }
+
+  String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma para o relatório (ou informe o ID): ");
+
+  try {
+    List<Usuario> alunos = relatorioController.gerarRelatorioAlunosPorTurma(idTurma);
+    
+    limparTerminal();
+    System.out.println("====== RELATÓRIO DE ALUNOS MATRICULADOS ======");
+    System.out.println("ID da Turma: " + idTurma);
+    System.out.println("Total de Alunos Confirmados: " + alunos.size());
+    imprimirSeparador();
+    
+    if (alunos.isEmpty()) {
+      System.out.println("Não há alunos com matrícula CONFIRMADA nesta turma.");
+    } else {
+      System.out.printf("%-15s | %-30s | %-30s%n", "MATRÍCULA", "NOME", "E-MAIL");
+      imprimirSeparador();
+      for (Usuario aluno : alunos) {
+        System.out.printf("%-15s | %-30s | %-30s%n", 
+            aluno.getMatricula(), 
+            aluno.getNome(), 
+            aluno.getEmail());
+      }
+    }
+    imprimirSeparador();
+  } catch (IllegalArgumentException e) {
+    System.out.println(e.getMessage());
+  }
+
+}
+
+  private void exibirRelatorioOcupacaoVagas() {
+  limparTerminal();
+  System.out.println("====== RELATÓRIO DE OCUPAÇÃO DE VAGAS ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioOcupacaoVagas();
+    if (linhas.isEmpty()) {
+      System.out.println("Nenhuma turma ativa encontrada para monitorar.");
+    } else {
+      for (String linha : linhas) {
+        System.out.println(linha);
+      }
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+
+private void exibirRelatorioReprovacaoDisciplina() {
+  String idDisciplina = selecionarDisciplinaId("Escolha a disciplina para analisar a taxa de reprovação (ou informe o ID): ");
+  limparTerminal();
+  System.out.println("====== RELATÓRIO DE REPROVAÇÃO POR DISCIPLINA ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioReprovacaoPorDisciplina(idDisciplina);
+    for (String linha : linhas) {
+      System.out.println(linha);
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+private void exibirRelatorioGeralUsuarios() {
+  limparTerminal();
+  System.out.println("====== RELATÓRIO GERAL DE USUÁRIOS CADASTRADOS ======");
+  imprimirSeparador();
+  try {
+    List<String> linhas = relatorioController.gerarRelatorioGeralUsuarios();
+    if (linhas.isEmpty()) {
+      System.out.println("Nenhum usuário cadastrado no sistema.");
+    } else {
+      for (String linha : linhas) {
+        System.out.println(linha);
+      }
+    }
+  } catch (IllegalArgumentException e) {
+    System.out.println("Erro: " + e.getMessage());
+  }
+  imprimirSeparador();
+}
+
 }
