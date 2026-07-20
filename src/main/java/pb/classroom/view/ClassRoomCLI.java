@@ -244,23 +244,23 @@ public class ClassRoomCLI {
             historicosCompartilhados,
             disciplinaController.getDisciplinas(),
             autenticacaoController.getUsuarios());
-    this.notaController = new NotaController(
-        autenticacaoController,
-        presencaController,
-        notaRepository.carregarNotas(),
-        historicosCompartilhados,
-        turmaController.getTurmas(),
-        matriculaController.getMatriculas());
-    
-    this.relatorioController = new pb.classroom.controller.RelatorioController(
-        this.autenticacaoController,
-        this.turmaController.getTurmas(),
-        this.matriculaController.getMatriculas(),
-        this.autenticacaoController.getUsuarios(),
-        this.disciplinaController.getDisciplinas(),
-        historicosCompartilhados
-    );
+    this.notaController =
+        new NotaController(
+            autenticacaoController,
+            presencaController,
+            notaRepository.carregarNotas(),
+            historicosCompartilhados,
+            turmaController.getTurmas(),
+            matriculaController.getMatriculas());
 
+    this.relatorioController =
+        new pb.classroom.controller.RelatorioController(
+            this.autenticacaoController,
+            this.turmaController.getTurmas(),
+            this.matriculaController.getMatriculas(),
+            this.autenticacaoController.getUsuarios(),
+            this.disciplinaController.getDisciplinas(),
+            historicosCompartilhados);
   }
 
   public void iniciar() {
@@ -393,15 +393,32 @@ public class ClassRoomCLI {
           consultarHistoricoPorCurso();
           break;
         case "29":
-          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { gerarRelatorioAlunosPorTurma(); }
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            gerarRelatorioAlunosPorTurma();
+          } else {
+            System.out.println("Opção inválida.");
+          }
           break;
-        case "30": // <-- ADICIONAR
-          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioOcupacaoVagas(); }
+        case "30":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            exibirRelatorioOcupacaoVagas();
+          } else {
+            System.out.println("Opção inválida.");
+          }
           break;
-        case "31": // <-- ADICIONAR
-          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) { exibirRelatorioReprovacaoDisciplina(); }
-        case "32": // <-- ADICIONAR ESTE BLOCO
-          if (usuarioLogadoPossuiPerfil(PerfilUsuario.ADMINISTRADOR)) { exibirRelatorioGeralUsuarios(); }
+        case "31":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+            exibirRelatorioReprovacaoDisciplina();
+          } else {
+            System.out.println("Opção inválida.");
+          }
+          break;
+        case "32":
+          if (usuarioLogadoPossuiPerfil(PerfilUsuario.ADMINISTRADOR)) {
+            exibirRelatorioGeralUsuarios();
+          } else {
+            System.out.println("Opção inválida.");
+          }
           break;
 
         case "0":
@@ -470,8 +487,8 @@ public class ClassRoomCLI {
         System.out.println("27 - Consultar histórico de aluno");
         System.out.println("28 - Consultar histórico por curso");
         System.out.println("29 - Gerar relatório de alunos por turma");
-        System.out.println("30 - Gerar relatório de ocupação de vagas"); 
-        System.out.println("31 - Gerar relatório de reprovação por disciplina"); 
+        System.out.println("30 - Gerar relatório de ocupação de vagas");
+        System.out.println("31 - Gerar relatório de reprovação por disciplina");
         break;
       case PROFESSOR:
         System.out.println("6 - Listar disciplinas");
@@ -2182,98 +2199,135 @@ public class ClassRoomCLI {
   }
 
   private void gerarRelatorioAlunosPorTurma() {
-  if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
-    System.out.println("Apenas coordenadores podem gerar relatórios.");
-    return;
-  }
-
-  List<Turma> turmas = turmaController.getTurmas();
-  if (turmas.isEmpty()) {
-    System.out.println("Nenhuma turma cadastrada.");
-    return;
-  }
-
-  String idTurma = selecionarTurmaId(turmas, "Escolha o número da turma para o relatório (ou informe o ID): ");
-
-  try {
-    List<Usuario> alunos = relatorioController.gerarRelatorioAlunosPorTurma(idTurma);
-    
-    limparTerminal();
-    System.out.println("====== RELATÓRIO DE ALUNOS MATRICULADOS ======");
-    System.out.println("ID da Turma: " + idTurma);
-    System.out.println("Total de Alunos Confirmados: " + alunos.size());
-    imprimirSeparador();
-    
-    if (alunos.isEmpty()) {
-      System.out.println("Não há alunos com matrícula CONFIRMADA nesta turma.");
-    } else {
-      System.out.printf("%-15s | %-30s | %-30s%n", "MATRÍCULA", "NOME", "E-MAIL");
-      imprimirSeparador();
-      for (Usuario aluno : alunos) {
-        System.out.printf("%-15s | %-30s | %-30s%n", 
-            aluno.getMatricula(), 
-            aluno.getNome(), 
-            aluno.getEmail());
-      }
+    if (!usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
+      System.out.println("Apenas coordenadores podem gerar relatórios.");
+      return;
     }
-    imprimirSeparador();
-  } catch (IllegalArgumentException e) {
-    System.out.println(e.getMessage());
-  }
 
-}
+    List<Turma> turmas = turmaController.getTurmas();
+    if (turmas.isEmpty()) {
+      System.out.println("Nenhuma turma cadastrada.");
+      return;
+    }
+
+    String idTurma =
+        selecionarTurmaId(turmas, "Escolha o número da turma para o relatório (ou informe o ID): ");
+
+    try {
+      List<Usuario> alunos = relatorioController.gerarRelatorioAlunosPorTurma(idTurma);
+
+      limparTerminal();
+      System.out.println("====== RELATÓRIO DE ALUNOS MATRICULADOS ======");
+      System.out.println("ID da Turma: " + idTurma);
+      System.out.println("Total de Alunos Confirmados: " + alunos.size());
+      imprimirSeparador();
+
+      if (alunos.isEmpty()) {
+        System.out.println("Não há alunos com matrícula CONFIRMADA nesta turma.");
+      } else {
+        System.out.printf("%-15s | %-30s | %-30s%n", "MATRÍCULA", "NOME", "E-MAIL");
+        imprimirSeparador();
+        for (Usuario aluno : alunos) {
+          System.out.printf(
+              "%-15s | %-30s | %-30s%n", aluno.getMatricula(), aluno.getNome(), aluno.getEmail());
+        }
+      }
+      imprimirSeparador();
+      salvarRelatorioPdf(
+          "relatorios/rf40-alunos-turma-" + idTurma + ".pdf",
+          destino -> relatorioController.exportarRelatorioAlunosPorTurmaPdf(idTurma, destino));
+    } catch (IllegalArgumentException e) {
+      System.out.println(e.getMessage());
+    }
+  }
 
   private void exibirRelatorioOcupacaoVagas() {
-  limparTerminal();
-  System.out.println("====== RELATÓRIO DE OCUPAÇÃO DE VAGAS ======");
-  imprimirSeparador();
-  try {
-    List<String> linhas = relatorioController.gerarRelatorioOcupacaoVagas();
-    if (linhas.isEmpty()) {
-      System.out.println("Nenhuma turma ativa encontrada para monitorar.");
-    } else {
+    limparTerminal();
+    System.out.println("====== RELATÓRIO DE OCUPAÇÃO DE VAGAS ======");
+    imprimirSeparador();
+    try {
+      List<String> linhas = relatorioController.gerarRelatorioOcupacaoVagas();
+      if (linhas.isEmpty()) {
+        System.out.println("Nenhuma turma ativa encontrada para monitorar.");
+      } else {
+        for (String linha : linhas) {
+          System.out.println(linha);
+        }
+      }
+      imprimirSeparador();
+      salvarRelatorioPdf(
+          "relatorios/rf41-ocupacao-vagas.pdf",
+          destino -> relatorioController.exportarRelatorioOcupacaoVagasPdf(destino));
+    } catch (IllegalArgumentException e) {
+      System.out.println("Erro: " + e.getMessage());
+    }
+  }
+
+  private void exibirRelatorioReprovacaoDisciplina() {
+    String idDisciplina =
+        selecionarDisciplinaId(
+            "Escolha a disciplina para analisar a taxa de reprovação (ou informe o ID): ");
+    limparTerminal();
+    System.out.println("====== RELATÓRIO DE REPROVAÇÃO POR DISCIPLINA ======");
+    imprimirSeparador();
+    try {
+      List<String> linhas = relatorioController.gerarRelatorioReprovacaoPorDisciplina(idDisciplina);
       for (String linha : linhas) {
         System.out.println(linha);
       }
+      imprimirSeparador();
+      salvarRelatorioPdf(
+          "relatorios/rf42-reprovacao-" + idDisciplina + ".pdf",
+          destino ->
+              relatorioController.exportarRelatorioReprovacaoPorDisciplinaPdf(
+                  idDisciplina, destino));
+    } catch (IllegalArgumentException e) {
+      System.out.println("Erro: " + e.getMessage());
     }
-  } catch (IllegalArgumentException e) {
-    System.out.println("Erro: " + e.getMessage());
   }
-  imprimirSeparador();
-}
 
-private void exibirRelatorioReprovacaoDisciplina() {
-  String idDisciplina = selecionarDisciplinaId("Escolha a disciplina para analisar a taxa de reprovação (ou informe o ID): ");
-  limparTerminal();
-  System.out.println("====== RELATÓRIO DE REPROVAÇÃO POR DISCIPLINA ======");
-  imprimirSeparador();
-  try {
-    List<String> linhas = relatorioController.gerarRelatorioReprovacaoPorDisciplina(idDisciplina);
-    for (String linha : linhas) {
-      System.out.println(linha);
-    }
-  } catch (IllegalArgumentException e) {
-    System.out.println("Erro: " + e.getMessage());
-  }
-  imprimirSeparador();
-}
-private void exibirRelatorioGeralUsuarios() {
-  limparTerminal();
-  System.out.println("====== RELATÓRIO GERAL DE USUÁRIOS CADASTRADOS ======");
-  imprimirSeparador();
-  try {
-    List<String> linhas = relatorioController.gerarRelatorioGeralUsuarios();
-    if (linhas.isEmpty()) {
-      System.out.println("Nenhum usuário cadastrado no sistema.");
-    } else {
-      for (String linha : linhas) {
-        System.out.println(linha);
+  private void exibirRelatorioGeralUsuarios() {
+    limparTerminal();
+    System.out.println("====== RELATÓRIO GERAL DE USUÁRIOS CADASTRADOS ======");
+    imprimirSeparador();
+    try {
+      List<String> linhas = relatorioController.gerarRelatorioGeralUsuarios();
+      if (linhas.isEmpty()) {
+        System.out.println("Nenhum usuário cadastrado no sistema.");
+      } else {
+        for (String linha : linhas) {
+          System.out.println(linha);
+        }
       }
+      imprimirSeparador();
+      salvarRelatorioPdf(
+          "relatorios/rf43-usuarios-cadastrados.pdf",
+          destino -> relatorioController.exportarRelatorioGeralUsuariosPdf(destino));
+    } catch (IllegalArgumentException e) {
+      System.out.println("Erro: " + e.getMessage());
     }
-  } catch (IllegalArgumentException e) {
-    System.out.println("Erro: " + e.getMessage());
   }
-  imprimirSeparador();
-}
 
+  private void salvarRelatorioPdf(
+      String caminhoPadrao,
+      java.util.function.Function<java.nio.file.Path, java.nio.file.Path> exportador) {
+    String resposta = lerLinha("Deseja baixar este relatório em PDF? (S/N): ").trim();
+    if (!resposta.equalsIgnoreCase("S") && !resposta.equalsIgnoreCase("SIM")) {
+      return;
+    }
+
+    String caminhoInformado = lerLinha("Caminho do arquivo PDF [" + caminhoPadrao + "]: ").trim();
+    String caminhoFinal = caminhoInformado.isEmpty() ? caminhoPadrao : caminhoInformado;
+    if (!caminhoFinal.toLowerCase().endsWith(".pdf")) {
+      caminhoFinal = caminhoFinal + ".pdf";
+    }
+
+    try {
+      java.nio.file.Path destino = java.nio.file.Paths.get(caminhoFinal);
+      java.nio.file.Path gerado = exportador.apply(destino);
+      System.out.println("PDF gerado com sucesso: " + gerado);
+    } catch (IllegalStateException | IllegalArgumentException e) {
+      System.out.println("Erro ao gerar PDF: " + e.getMessage());
+    }
+  }
 }
