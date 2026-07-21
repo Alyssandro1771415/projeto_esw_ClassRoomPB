@@ -406,6 +406,7 @@ public class ClassRoomCLI {
           if (usuarioLogadoPossuiPerfil(PerfilUsuario.COORDENADOR)) {
             exibirRelatorioReprovacaoDisciplina();
           }
+          break;
         case "32": // <-- ADICIONAR ESTE BLOCO
           if (usuarioLogadoPossuiPerfil(PerfilUsuario.ADMINISTRADOR)) {
             exibirRelatorioGeralUsuarios();
@@ -2224,6 +2225,9 @@ public class ClassRoomCLI {
         }
       }
       imprimirSeparador();
+      salvarRelatorioPdf(
+          "rf40-alunos-turma-" + idTurma + ".pdf",
+          destino -> relatorioController.exportarRelatorioAlunosPorTurmaPdf(idTurma, destino));
     } catch (IllegalArgumentException e) {
       System.out.println(e.getMessage());
     }
@@ -2246,6 +2250,9 @@ public class ClassRoomCLI {
       System.out.println("Erro: " + e.getMessage());
     }
     imprimirSeparador();
+    salvarRelatorioPdf(
+        "rf41-ocupacao-vagas.pdf",
+        destino -> relatorioController.exportarRelatorioOcupacaoVagasPdf(destino));
   }
 
   private void exibirRelatorioReprovacaoDisciplina() {
@@ -2264,6 +2271,10 @@ public class ClassRoomCLI {
       System.out.println("Erro: " + e.getMessage());
     }
     imprimirSeparador();
+    salvarRelatorioPdf(
+        "rf42-reprovacao-" + idDisciplina + ".pdf",
+        destino ->
+            relatorioController.exportarRelatorioReprovacaoPorDisciplinaPdf(idDisciplina, destino));
   }
 
   private void exibirRelatorioGeralUsuarios() {
@@ -2283,5 +2294,36 @@ public class ClassRoomCLI {
       System.out.println("Erro: " + e.getMessage());
     }
     imprimirSeparador();
+    salvarRelatorioPdf(
+        "rf43-usuarios-cadastrados.pdf",
+        destino -> relatorioController.exportarRelatorioGeralUsuariosPdf(destino));
+  }
+
+  private java.nio.file.Path caminhoPdfPadraoDownloads(String nomeArquivo) {
+    return java.nio.file.Paths.get(System.getProperty("user.home"), "Downloads", nomeArquivo);
+  }
+
+  private void salvarRelatorioPdf(
+      String nomeArquivo,
+      java.util.function.Function<java.nio.file.Path, java.nio.file.Path> exportador) {
+    String resposta = lerLinha("Deseja baixar este relatório em PDF? (S/N): ").trim();
+    if (!resposta.equalsIgnoreCase("S") && !resposta.equalsIgnoreCase("SIM")) {
+      return;
+    }
+
+    java.nio.file.Path caminhoPadrao = caminhoPdfPadraoDownloads(nomeArquivo);
+    String caminhoInformado = lerLinha("Caminho do arquivo PDF [" + caminhoPadrao + "]: ").trim();
+    String caminhoFinal = caminhoInformado.isEmpty() ? caminhoPadrao.toString() : caminhoInformado;
+    if (!caminhoFinal.toLowerCase().endsWith(".pdf")) {
+      caminhoFinal = caminhoFinal + ".pdf";
+    }
+
+    try {
+      java.nio.file.Path destino = java.nio.file.Paths.get(caminhoFinal);
+      java.nio.file.Path gerado = exportador.apply(destino);
+      System.out.println("PDF gerado com sucesso: " + gerado);
+    } catch (IllegalStateException | IllegalArgumentException e) {
+      System.out.println("Erro ao gerar PDF: " + e.getMessage());
+    }
   }
 }

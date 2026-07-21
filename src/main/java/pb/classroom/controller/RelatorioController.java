@@ -1,5 +1,6 @@
 package pb.classroom.controller;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +10,7 @@ import pb.classroom.model.Matricula;
 import pb.classroom.model.PerfilUsuario;
 import pb.classroom.model.Turma;
 import pb.classroom.model.Usuario;
+import pb.classroom.report.PdfRelatorioWriter;
 
 public class RelatorioController {
 
@@ -159,6 +161,52 @@ public class RelatorioController {
     return Collections.unmodifiableList(linhas);
   }
 
+  /** RF40: Exporta o relatório de alunos matriculados por turma em PDF. */
+  public Path exportarRelatorioAlunosPorTurmaPdf(String idTurma, Path destino) {
+    List<Usuario> alunos = gerarRelatorioAlunosPorTurma(idTurma);
+    List<String> linhas = new ArrayList<>();
+    linhas.add("ID da Turma: " + idTurma.trim());
+    linhas.add("Total de Alunos Confirmados: " + alunos.size());
+    linhas.add("");
+    if (alunos.isEmpty()) {
+      linhas.add("Não há alunos com matrícula CONFIRMADA nesta turma.");
+    } else {
+      for (Usuario aluno : alunos) {
+        linhas.add(
+            String.format(
+                "Matrícula: %s | Nome: %s | E-mail: %s",
+                aluno.getMatricula(), aluno.getNome(), aluno.getEmail()));
+      }
+    }
+    return PdfRelatorioWriter.escrever(
+        destino, "Relatório de Alunos Matriculados por Turma (RF40)", linhas);
+  }
+
+  /** RF41: Exporta o relatório de ocupação de vagas em PDF. */
+  public Path exportarRelatorioOcupacaoVagasPdf(Path destino) {
+    return PdfRelatorioWriter.escrever(
+        destino, "Relatório de Ocupação de Vagas (RF41)", gerarRelatorioOcupacaoVagas());
+  }
+
+  /** RF42: Exporta o relatório de reprovação por disciplina em PDF. */
+  public Path exportarRelatorioReprovacaoPorDisciplinaPdf(String idDisciplina, Path destino) {
+    List<String> linhas = new ArrayList<>();
+    Disciplina disciplina = buscarDisciplinaPorId(idDisciplina.trim());
+    if (disciplina != null) {
+      linhas.add("Disciplina: " + disciplina.getCodigo() + " - " + disciplina.getNome());
+      linhas.add("");
+    }
+    linhas.addAll(gerarRelatorioReprovacaoPorDisciplina(idDisciplina));
+    return PdfRelatorioWriter.escrever(
+        destino, "Relatório de Reprovação por Disciplina (RF42)", linhas);
+  }
+
+  /** RF43: Exporta o relatório geral de usuários cadastrados em PDF. */
+  public Path exportarRelatorioGeralUsuariosPdf(Path destino) {
+    return PdfRelatorioWriter.escrever(
+        destino, "Relatório Geral de Usuários Cadastrados (RF43)", gerarRelatorioGeralUsuarios());
+  }
+
   // ==================== Métodos Auxiliares de Validação ====================
 
   private void validarCoordenadorAutenticado() {
@@ -184,12 +232,18 @@ public class RelatorioController {
     if (idDisciplina == null || idDisciplina.trim().isEmpty()) {
       throw new IllegalArgumentException("id da disciplina é obrigatório");
     }
+    if (buscarDisciplinaPorId(idDisciplina.trim()) == null) {
+      throw new IllegalArgumentException("Disciplina não encontrada: " + idDisciplina);
+    }
+  }
+
+  private Disciplina buscarDisciplinaPorId(String idDisciplina) {
     for (Disciplina disciplina : disciplinas) {
-      if (disciplina.getId().equals(idDisciplina.trim())) {
-        return;
+      if (disciplina.getId().equals(idDisciplina)) {
+        return disciplina;
       }
     }
-    throw new IllegalArgumentException("Disciplina não encontrada: " + idDisciplina);
+    return null;
   }
 
   private Usuario buscarUsuarioPorId(String idUsuario) {

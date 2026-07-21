@@ -2,6 +2,8 @@ package pb.classroom.controller;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -219,5 +221,44 @@ public class RelatorioControllerTest {
         usuarios.size(),
         resultado.size(),
         "O relatório deve conter todos os usuários registrados.");
+  }
+
+  @Test
+  public void deveExportarRelatoriosEmPdfRF40aRF43(
+      @org.junit.jupiter.api.io.TempDir java.nio.file.Path tempDir) throws Exception {
+    authController.login("coord@pb.com", "senha123");
+    Matricula mat = new Matricula(aluno1.getId(), turma.getId(), StatusMatricula.CONFIRMADA);
+    matriculas.add(mat);
+
+    String idDisciplina = "disciplina-1";
+    disciplinas.add(
+        new Disciplina(
+            idDisciplina, "ED101", "Estrutura de Dados", 60, 4, "curso-1", new ArrayList<>()));
+
+    java.nio.file.Path pdf40 = tempDir.resolve("rf40.pdf");
+    java.nio.file.Path pdf41 = tempDir.resolve("rf41.pdf");
+    java.nio.file.Path pdf42 = tempDir.resolve("rf42.pdf");
+
+    assertTrue(
+        Files.exists(relatorioController.exportarRelatorioAlunosPorTurmaPdf(turma.getId(), pdf40)));
+    assertTrue(Files.exists(relatorioController.exportarRelatorioOcupacaoVagasPdf(pdf41)));
+    assertTrue(
+        Files.exists(
+            relatorioController.exportarRelatorioReprovacaoPorDisciplinaPdf(idDisciplina, pdf42)));
+
+    authController.logout();
+    authController.login("admin@pb.com", "senhaAdmin");
+    java.nio.file.Path pdf43 = tempDir.resolve("rf43.pdf");
+    assertTrue(Files.exists(relatorioController.exportarRelatorioGeralUsuariosPdf(pdf43)));
+
+    assertEquals("%PDF", lerCabecalhoPdf(pdf40));
+    assertEquals("%PDF", lerCabecalhoPdf(pdf41));
+    assertEquals("%PDF", lerCabecalhoPdf(pdf42));
+    assertEquals("%PDF", lerCabecalhoPdf(pdf43));
+  }
+
+  private String lerCabecalhoPdf(java.nio.file.Path arquivo) throws Exception {
+    byte[] bytes = Files.readAllBytes(arquivo);
+    return new String(bytes, 0, Math.min(4, bytes.length), StandardCharsets.US_ASCII);
   }
 }

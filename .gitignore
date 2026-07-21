@@ -27,6 +27,7 @@ surefire-reports/
 failsafe-reports/
 jacoco.exec
 coverage/
+relatorios/
 
 # IDEs and editors
 .idea/
